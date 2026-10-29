@@ -1,0 +1,222 @@
+{
+  "success": true,
+  "items": [
+    {
+      "category": "Biguanides",
+      "categorySlug": "biguanides",
+      "drug": "Metformin",
+      "drugSlug": "metformin",
+      "localRelativePath": "drugs/biguanides/Metformin.pdf",
+      "fileSizeBytes": 1778337,
+      "targetStoragePath": "drugs/biguanides/Metformin.pdf",
+      "mappingStatus": "matched",
+      "uploadStatus": "pending"
+    },
+    {
+      "category": "DPP-4 Inhibitors",
+      "categorySlug": "dpp-4-inhibitors",
+      "drug": "Sitagliptin",
+      "drugSlug": "sitagliptin",
+      "localRelativePath": "drugs/dpp-4-inhibitors/Sitagliptin.pdf",
+      "fileSizeBytes": 1926935,
+      "targetStoragePath": "drugs/dpp-4-inhibitors/Sitagliptin.pdf",
+      "mappingStatus": "matched",
+      "uploadStatus": "pending"
+    },
+    {
+      "category": "DPP-4 Inhibitors",
+      "categorySlug": "dpp-4-inhibitors",
+      "drug": "Vildagliptin",
+      "drugSlug": "vildagliptin",
+      "localRelativePath": "drugs/dpp-4-inhibitors/Vildagliptin.pdf",
+      "fileSizeBytes": 1923169,
+      "targetStoragePath": "drugs/dpp-4-inhibitors/Vildagliptin.pdf",
+      "mappingStatus": "matched",
+      "uploadStatus": "pending"
+    },
+    {
+      "category": "DPP-4 Inhibitors",
+      "categorySlug": "dpp-4-inhibitors",
+      "drug": "Linagliptin",
+      "drugSlug": "linagliptin",
+      "localRelativePath": "drugs/dpp-4-inhibitors/Linagliptin.pdf",
+      "fileSizeBytes": 1918661,
+      "targetStoragePath": "drugs/dpp-4-inhibitors/Linagliptin.pdf",
+      "mappingStatus": "matched",
+      "uploadStatus": "pending"
+    },
+    {
+      "category": "DPP-4 Inhibitors",
+      "categorySlug": "dpp-4-inhibitors",
+      "drug": "Saxagliptin",
+      "drugSlug": "saxagliptin",
+      "localRelativePath": "drugs/dpp-4-inhibitors/Saxagliptin.pdf",
+      "fileSizeBytes": 2162610,
+      "targetStoragePath": "drugs/dpp-4-inhibitors/Saxagliptin.pdf",
+      "mappingStatus": "matched",
+      "uploadStatus": "pending"
+    },
+    {
+      "category": "TZDs (Thiazolidinediones)",
+      "categorySlug": "tzd-thiazolidinediones",
+      "drug": "Pioglitazone",
+      "drugSlug": "pioglitazone",
+      "localRelativePath": "drugs/tzd-thiazolidinediones/Pioglitazone.pdf",
+      "fileSizeBytes": 2320105,
+      "targetStoragePath": "drugs/tzd-thiazolidinediones/Pioglitazone.pdf",
+      "mappingStatus": "matched",
+      "uploadStatus": "pending"
+    },
+    {
+      "category": "Sulfonylureas",
+      "categorySlug": "sulfonylureas",
+      "drug": "Glimepiride",
+      "drugSlug": "glimepiride",
+      "localRelativePath": "drugs/sulfonylureas/Glimepiride.pdf",
+      "fileSizeBytes": 2415213,
+      "targetStoragePath": "drugs/sulfonylureas/Glimepiride.pdf",
+      "mappingStatus": "matched",
+      "uploadStatus": "pending"
+    },
+    {
+      "category": "Sulfonylureas",
+      "categorySlug": "sulfonylureas",
+      "drug": "Glipizide",
+      "drugSlug": "glipizide",
+      "localRelativePath": "drugs/sulfonylureas/Glipizide.pdf",
+      "fileSizeBytes": 2517348,
+      "targetStoragePath": "drugs/sulfonylureas/Glipizide.pdf",
+      "mappingStatus": "matched",
+      "uploadStatus": "pending"
+    },
+    {
+      "category": "Sulfonylureas",
+      "categorySlug": "sulfonylureas",
+      "drug": "Glibenclamide",
+      "drugSlug": "glibenclamide",
+      "localRelativePath": "drugs/sulfonylureas/Glibenclamide.pdf",
+      "fileSizeBytes": 2457349,
+      "targetStoragePath": "drugs/sulfonylureas/Glibenclamide.pdf",
+      "mappingStatus": "matched",
+      "uploadStatus": "pending"
+    },
+    {
+      "category": "Sulfonylureas",
+      "categorySlug": "sulfonylureas",
+      "drug": "Gliclazide",
+      "drugSlug": "gliclazide",
+      "localRelativePath": "drugs/sulfonylureas/Gliclazide.pdf",
+      "fileSizeBytes": 2426427,
+      "targetStoragePath": "drugs/sulfonylureas/Gliclazide.pdf",
+      "mappingStatus": "matched",
+      "uploadStatus": "pending"
+    },
+    {
+      "category": "Alpha-glucosidase Inhibitors",
+      "categorySlug": "alpha-glucosidase-inhibitors",
+      "drug": "Acarbose",
+      "drugSlug": "acarbose",
+      "localRelativePath": "drugs/alpha-glucosidase-inhibitors/Acarbose.pdf",
+      "fileSizeBytes": 2438074,
+      "targetStoragePath": "drugs/alpha-glucosidase-inhibitors/Acarbose.pdf",
+      "mappingStatus": "matched",
+      "uploadStatus": "pending"
+    },
+    {
+      "category": "Alpha-glucosidase Inhibitors",
+      "categorySlug": "alpha-glucosidase-inhibitors",
+      "drug": "Miglitol",
+      "drugSlug": "miglitol",
+      "localRelativePath": "drugs/alpha-glucosidase-inhibitors/Miglitol.pdf",
+      "fileSizeBytes": 2328572,
+      "targetStoragePath": "drugs/alpha-glucosidase-inhibitors/Miglitol.pdf",
+      "mappingStatus": "matched",
+      "uploadStatus": "pending"
+    },
+    {
+      "category": "Alpha-glucosidase Inhibitors",
+      "categorySlug": "alpha-glucosidase-inhibitors",
+      "drug": "Voglibose",
+      "drugSlug": "voglibose",
+      "localRelativePath": "drugs/alpha-glucosidase-inhibitors/Voglibose.pdf",
+      "fileSizeBytes": 2520501,
+      "targetStoragePath": "drugs/alpha-glucosidase-inhibitors/Voglibose.pdf",
+      "mappingStatus": "matched",
+      "uploadStatus": "pending"
+    },
+    {
+      "category": "SGLT-2 Inhibitors",
+      "categorySlug": "sglt-2-inhibitors",
+      "drug": "Empagliflozin",
+      "drugSlug": "empagliflozin",
+      "localRelativePath": "drugs/sglt-2-inhibitors/Empagliflozin.pdf",
+      "fileSizeBytes": 2378922,
+      "targetStoragePath": "drugs/sglt-2-inhibitors/Empagliflozin.pdf",
+      "mappingStatus": "matched",
+      "uploadStatus": "pending"
+    },
+    {
+      "category": "SGLT-2 Inhibitors",
+      "categorySlug": "sglt-2-inhibitors",
+      "drug": "Canagliflozin",
+      "drugSlug": "canagliflozin",
+      "localRelativePath": "drugs/sglt-2-inhibitors/Canagliflozin.pdf",
+      "fileSizeBytes": 2452513,
+      "targetStoragePath": "drugs/sglt-2-inhibitors/Canagliflozin.pdf",
+      "mappingStatus": "matched",
+      "uploadStatus": "pending"
+    },
+    {
+      "category": "SGLT-2 Inhibitors",
+      "categorySlug": "sglt-2-inhibitors",
+      "drug": "Dapagliflozin",
+      "drugSlug": "dapagliflozin",
+      "localRelativePath": "drugs/sglt-2-inhibitors/Dapagliflozin.pdf",
+      "fileSizeBytes": 2465123,
+      "targetStoragePath": "drugs/sglt-2-inhibitors/Dapagliflozin.pdf",
+      "mappingStatus": "matched",
+      "uploadStatus": "pending"
+    },
+    {
+      "category": "Non-Sulphonylureas",
+      "categorySlug": "non-sulphonylureas",
+      "drug": "Nateglinide",
+      "drugSlug": "nateglinide",
+      "localRelativePath": "drugs/non-sulphonylureas/Nateglinide.pdf",
+      "fileSizeBytes": 2480893,
+      "targetStoragePath": "drugs/non-sulphonylureas/Nateglinide.pdf",
+      "mappingStatus": "matched",
+      "uploadStatus": "pending"
+    },
+    {
+      "category": "Non-Sulphonylureas",
+      "categorySlug": "non-sulphonylureas",
+      "drug": "Repaglinide",
+      "drugSlug": "repaglinide",
+      "localRelativePath": "drugs/non-sulphonylureas/Repaglinide.pdf",
+      "fileSizeBytes": 2475682,
+      "targetStoragePath": "drugs/non-sulphonylureas/Repaglinide.pdf",
+      "mappingStatus": "matched",
+      "uploadStatus": "pending"
+    },
+    {
+      "category": "Non-Sulphonylureas",
+      "categorySlug": "non-sulphonylureas",
+      "drug": "Semaglutide",
+      "drugSlug": "semaglutide",
+      "localRelativePath": "drugs/non-sulphonylureas/Semaglutide.pdf",
+      "fileSizeBytes": 1812271,
+      "targetStoragePath": "drugs/non-sulphonylureas/Semaglutide.pdf",
+      "mappingStatus": "matched",
+      "uploadStatus": "pending"
+    }
+  ],
+  "summary": {
+    "total": 19,
+    "matched": 19,
+    "missing": 0,
+    "ambiguous": 0,
+    "duplicate": 0,
+    "allFilesFound": 19
+  }
+}
