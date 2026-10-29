@@ -24,3 +24,4 @@ describe('Excel Formula Injection Protection', () => {
     expect(sanitizeCellValue(null)).toBe(null);
   });
 });
+

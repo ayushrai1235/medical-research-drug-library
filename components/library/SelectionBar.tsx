@@ -135,3 +135,4 @@ export function SelectionBar({
     </div>
   );
 }
+

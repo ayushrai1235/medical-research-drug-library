@@ -381,3 +381,4 @@ export function ActivityExplorer({ drugsList }: ActivityExplorerProps) {
     </div>
   );
 }
+

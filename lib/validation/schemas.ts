@@ -62,3 +62,4 @@ export const adminActivityFilterSchema = z.object({
   endDate: z.string().optional(),
   downloadType: z.string().optional(),
 });
+

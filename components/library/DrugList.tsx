@@ -296,3 +296,4 @@ export function DrugList({ categories }: DrugListProps) {
     </div>
   );
 }
+

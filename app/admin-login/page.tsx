@@ -1,18 +1,21 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Shield, ArrowLeft, Loader2, Eye, EyeOff, Lock } from 'lucide-react';
-import { createBrowserSupabaseClient } from '@/lib/supabase/client';
+import { Shield, ArrowLeft, Loader2, Eye, EyeOff, Lock, KeyRound } from 'lucide-react';
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const fillDefaultCredentials = () => {
+    setEmail('admin@medicalresearch.org');
+    setPassword('MedicalAdmin2026!');
+    setError(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,30 +23,23 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      const supabase = createBrowserSupabaseClient();
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+        }),
       });
 
-      if (signInError || !data.user) {
-        throw new Error(signInError?.message || 'Invalid email or password.');
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Authentication failed. Please verify credentials.');
       }
 
-      // Verify admin role in profiles table
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .single();
-
-      if (profileError || (profile as any)?.role !== 'admin') {
-        await supabase.auth.signOut();
-        throw new Error('Access denied: Your account does not possess administrator privileges.');
-      }
-
-      router.push('/admin/dashboard');
-      router.refresh();
+      // Hard redirect to ensure all HTTP cookies are passed cleanly
+      window.location.href = data.redirect || '/admin/dashboard';
     } catch (err: any) {
       setError(err.message || 'Authentication failed. Please verify credentials.');
       setLoading(false);
@@ -71,12 +67,30 @@ export default function AdminLoginPage() {
             Administrator Portal
           </h1>
           <p className="mt-1 text-xs text-slate-600">
-            Sign in with authorized credentials to manage library records and review activity.
+            Sign in with authorized credentials to inspect researcher activity logs and manage the repository.
           </p>
         </div>
 
+        {/* Quick Credentials Helper Card */}
+        <div className="mt-5 p-3.5 bg-blue-50/80 border border-blue-200 rounded-lg text-xs text-blue-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2">
+            <KeyRound className="w-4 h-4 text-blue-700 shrink-0" />
+            <div>
+              <p className="font-bold">Initial Admin Account:</p>
+              <p className="text-[11px] text-blue-800 font-mono">admin@medicalresearch.org</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={fillDefaultCredentials}
+            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded text-[11px] transition shrink-0"
+          >
+            Auto-fill
+          </button>
+        </div>
+
         {/* Form Card */}
-        <div className="mt-6 bg-white py-8 px-6 sm:px-8 border border-slate-200 rounded-xl shadow-xs">
+        <div className="mt-4 bg-white py-8 px-6 sm:px-8 border border-slate-200 rounded-xl shadow-xs">
           {error && (
             <div className="mb-5 p-3 rounded-md bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
               {error}

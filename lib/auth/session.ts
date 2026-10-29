@@ -109,3 +109,4 @@ export async function endResearchSession(): Promise<void> {
     cookieStore.delete(SESSION_COOKIE_NAME);
   }
 }
+

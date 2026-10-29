@@ -23,3 +23,4 @@ export function getServiceRoleSupabaseClient(): SupabaseClient<Database> {
 
   return serviceClientInstance;
 }
+

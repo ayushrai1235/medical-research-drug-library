@@ -228,3 +228,4 @@ Tests verify:
 - **Server-Derived Identity**: Researcher and Admin identities are derived strictly from verified HTTP-only session cookies or Supabase Auth JWTs.
 - **Formula Injection Mitigation**: Untrusted user strings exported to Excel that begin with spreadsheet formula operators (`=`, `+`, `-`, `@`) are escaped.
 - **Bounded ZIP & PDF Operations**: File count and memory bounds prevent function timeouts on serverless environments.
+

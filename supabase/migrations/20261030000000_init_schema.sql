@@ -257,3 +257,4 @@ CREATE POLICY "Admins can insert audit logs"
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES ('research-pdfs', 'research-pdfs', false, 52428800, ARRAY['application/pdf']::text[])
 ON CONFLICT (id) DO UPDATE SET public = false;
+

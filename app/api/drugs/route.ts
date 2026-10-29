@@ -61,3 +61,4 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message || 'Failed to fetch drugs' }, { status: 500 });
   }
 }
+

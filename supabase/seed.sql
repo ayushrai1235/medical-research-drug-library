@@ -113,3 +113,4 @@ INSERT INTO public.drugs (category_id, name, slug, sort_order, pdf_status)
 SELECT id, 'Semaglutide', 'semaglutide', 3, 'missing'
 FROM public.categories WHERE slug = 'non-sulphonylureas'
 ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name, sort_order = EXCLUDED.sort_order;
+
