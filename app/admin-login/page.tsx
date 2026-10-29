@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Shield, ArrowLeft, Loader2, Eye, EyeOff, Lock, KeyRound } from 'lucide-react';
+import { Shield, ArrowLeft, Loader2, Eye, EyeOff, Lock } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
@@ -10,12 +10,6 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const fillDefaultCredentials = () => {
-    setEmail('admin@medicalresearch.org');
-    setPassword('MedicalAdmin2026!');
-    setError(null);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,26 +65,8 @@ export default function AdminLoginPage() {
           </p>
         </div>
 
-        {/* Quick Credentials Helper Card */}
-        <div className="mt-5 p-3.5 bg-blue-50/80 border border-blue-200 rounded-lg text-xs text-blue-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2">
-            <KeyRound className="w-4 h-4 text-blue-700 shrink-0" />
-            <div>
-              <p className="font-bold">Initial Admin Account:</p>
-              <p className="text-[11px] text-blue-800 font-mono">admin@medicalresearch.org</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={fillDefaultCredentials}
-            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded text-[11px] transition shrink-0"
-          >
-            Auto-fill
-          </button>
-        </div>
-
         {/* Form Card */}
-        <div className="mt-4 bg-white py-8 px-6 sm:px-8 border border-slate-200 rounded-xl shadow-xs">
+        <div className="mt-6 bg-white py-8 px-6 sm:px-8 border border-slate-200 rounded-xl shadow-xs">
           {error && (
             <div className="mb-5 p-3 rounded-md bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
               {error}
