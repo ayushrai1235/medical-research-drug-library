@@ -62,13 +62,13 @@ export function Header({ researchSession, adminUser }: HeaderProps) {
           <button
             type="button"
             onClick={() => setMobileMenuOpen((o) => !o)}
-            className="p-1.5 rounded-md md:hidden text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition mr-1"
+            className="p-2 rounded-lg md:hidden text-slate-600 hover:text-slate-900 active:bg-slate-200 active:scale-90 transition-all duration-75 mr-1 touch-manipulation cursor-pointer"
             aria-label="Toggle navigation menu"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
 
-          <Link href="/" className="flex items-center gap-2 sm:gap-2.5 text-blue-900 font-bold text-sm sm:text-lg hover:opacity-90 transition">
+          <Link href="/" className="flex items-center gap-2 sm:gap-2.5 text-blue-900 font-bold text-sm sm:text-lg hover:opacity-90 active:scale-[0.98] transition-all duration-75 touch-manipulation">
             <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-900 text-white flex items-center justify-center font-black text-xs sm:text-base shrink-0">
               M
             </div>
@@ -84,7 +84,7 @@ export function Header({ researchSession, adminUser }: HeaderProps) {
           <nav className="hidden md:flex items-center gap-1.5 ml-6 text-xs font-medium text-slate-600">
             <Link
               href="/library"
-              className="px-3 py-1.5 rounded hover:bg-slate-100 hover:text-slate-900 transition flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded hover:bg-slate-100 active:bg-slate-200 active:scale-95 text-slate-700 hover:text-slate-900 transition-all duration-75 flex items-center gap-1.5 touch-manipulation"
             >
               <BookOpen className="w-3.5 h-3.5 text-blue-600" />
               Document Library
@@ -94,21 +94,21 @@ export function Header({ researchSession, adminUser }: HeaderProps) {
               <>
                 <Link
                   href="/admin/dashboard"
-                  className="px-3 py-1.5 rounded hover:bg-slate-100 hover:text-slate-900 transition flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded hover:bg-slate-100 active:bg-slate-200 active:scale-95 text-slate-700 hover:text-slate-900 transition-all duration-75 flex items-center gap-1.5 touch-manipulation"
                 >
                   <Shield className="w-3.5 h-3.5 text-blue-600" />
                   Dashboard
                 </Link>
                 <Link
                   href="/admin/activity"
-                  className="px-3 py-1.5 rounded hover:bg-slate-100 hover:text-slate-900 transition flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded hover:bg-slate-100 active:bg-slate-200 active:scale-95 text-slate-700 hover:text-slate-900 transition-all duration-75 flex items-center gap-1.5 touch-manipulation"
                 >
                   <Layers className="w-3.5 h-3.5 text-blue-600" />
                   Activity Explorer
                 </Link>
                 <Link
                   href="/admin/exports"
-                  className="px-3 py-1.5 rounded hover:bg-slate-100 hover:text-slate-900 transition flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded hover:bg-slate-100 active:bg-slate-200 active:scale-95 text-slate-700 hover:text-slate-900 transition-all duration-75 flex items-center gap-1.5 touch-manipulation"
                 >
                   <FileSpreadsheet className="w-3.5 h-3.5 text-teal-600" />
                   Excel Exports
@@ -154,7 +154,7 @@ export function Header({ researchSession, adminUser }: HeaderProps) {
               <button
                 type="button"
                 onClick={handleEndResearchSession}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 active:bg-red-200 active:scale-95 border border-red-200 rounded-lg transition-all duration-75 touch-manipulation cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5 text-red-600" />
                 <span className="hidden sm:inline">End Session</span>
@@ -164,13 +164,13 @@ export function Header({ researchSession, adminUser }: HeaderProps) {
             <div className="flex items-center gap-1.5 sm:gap-2">
               <Link
                 href="/research-entry"
-                className="px-2.5 py-1 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition whitespace-nowrap"
+                className="px-2.5 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 active:scale-95 rounded-lg transition-all duration-75 whitespace-nowrap touch-manipulation cursor-pointer"
               >
                 Researcher
               </Link>
               <Link
                 href="/admin-login"
-                className="px-2.5 py-1 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md transition whitespace-nowrap"
+                className="px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 active:scale-95 rounded-lg transition-all duration-75 whitespace-nowrap touch-manipulation cursor-pointer"
               >
                 Admin
               </Link>
@@ -181,11 +181,11 @@ export function Header({ researchSession, adminUser }: HeaderProps) {
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-2 text-xs font-medium animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="md:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-1.5 text-xs font-medium animate-in fade-in slide-in-from-top-2 duration-100">
           <Link
             href="/library"
             onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-2 p-2 rounded hover:bg-slate-50 text-slate-700"
+            className="flex items-center gap-2 p-2.5 rounded-lg hover:bg-slate-50 active:bg-slate-100 active:scale-[0.98] text-slate-800 transition-all duration-75 touch-manipulation"
           >
             <BookOpen className="w-4 h-4 text-blue-600" />
             Document Library
@@ -196,7 +196,7 @@ export function Header({ researchSession, adminUser }: HeaderProps) {
               <Link
                 href="/admin/dashboard"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 p-2 rounded hover:bg-slate-50 text-slate-700"
+                className="flex items-center gap-2 p-2.5 rounded-lg hover:bg-slate-50 active:bg-slate-100 active:scale-[0.98] text-slate-800 transition-all duration-75 touch-manipulation"
               >
                 <Shield className="w-4 h-4 text-blue-600" />
                 Admin Dashboard
@@ -204,7 +204,7 @@ export function Header({ researchSession, adminUser }: HeaderProps) {
               <Link
                 href="/admin/activity"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 p-2 rounded hover:bg-slate-50 text-slate-700"
+                className="flex items-center gap-2 p-2.5 rounded-lg hover:bg-slate-50 active:bg-slate-100 active:scale-[0.98] text-slate-800 transition-all duration-75 touch-manipulation"
               >
                 <Layers className="w-4 h-4 text-blue-600" />
                 Activity Explorer
@@ -212,7 +212,7 @@ export function Header({ researchSession, adminUser }: HeaderProps) {
               <Link
                 href="/admin/exports"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 p-2 rounded hover:bg-slate-50 text-slate-700"
+                className="flex items-center gap-2 p-2.5 rounded-lg hover:bg-slate-50 active:bg-slate-100 active:scale-[0.98] text-slate-800 transition-all duration-75 touch-manipulation"
               >
                 <FileSpreadsheet className="w-4 h-4 text-teal-600" />
                 Excel Exports
@@ -221,18 +221,18 @@ export function Header({ researchSession, adminUser }: HeaderProps) {
           )}
 
           {!researchSession && !adminUser && (
-            <div className="pt-2 border-t border-slate-100 flex flex-col gap-1.5">
+            <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
               <Link
                 href="/research-entry"
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-2 rounded bg-blue-50 text-blue-700 font-semibold"
+                className="p-2.5 rounded-lg bg-blue-50 text-blue-700 active:bg-blue-100 active:scale-[0.98] font-semibold text-center transition-all duration-75 touch-manipulation"
               >
                 Continue as Research User
               </Link>
               <Link
                 href="/admin-login"
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-2 rounded bg-slate-100 text-slate-700 font-semibold"
+                className="p-2.5 rounded-lg bg-slate-100 text-slate-700 active:bg-slate-200 active:scale-[0.98] font-semibold text-center transition-all duration-75 touch-manipulation"
               >
                 Admin Login
               </Link>

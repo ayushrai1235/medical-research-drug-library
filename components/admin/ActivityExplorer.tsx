@@ -241,7 +241,7 @@ export function ActivityExplorer({ drugsList }: ActivityExplorerProps) {
           <button
             type="button"
             onClick={fetchActivity}
-            className="flex items-center gap-1 text-slate-500 hover:text-slate-800"
+            className="flex items-center gap-1 text-slate-500 hover:text-slate-800 active:scale-90 transition-transform duration-75 touch-manipulation cursor-pointer p-1"
             title="Refresh"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -361,7 +361,7 @@ export function ActivityExplorer({ drugsList }: ActivityExplorerProps) {
               type="button"
               onClick={() => setPage((p) => Math.max(p - 1, 1))}
               disabled={page <= 1 || loading}
-              className="inline-flex items-center gap-1 px-3 py-1.5 border border-slate-300 rounded bg-white hover:bg-slate-50 disabled:opacity-40 text-slate-700 font-medium transition"
+              className="inline-flex items-center gap-1 px-3 py-1.5 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 active:bg-slate-100 active:scale-95 disabled:opacity-40 text-slate-700 font-medium transition-all duration-75 touch-manipulation cursor-pointer"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
               Previous
@@ -370,7 +370,7 @@ export function ActivityExplorer({ drugsList }: ActivityExplorerProps) {
               type="button"
               onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
               disabled={page >= totalPages || loading}
-              className="inline-flex items-center gap-1 px-3 py-1.5 border border-slate-300 rounded bg-white hover:bg-slate-50 disabled:opacity-40 text-slate-700 font-medium transition"
+              className="inline-flex items-center gap-1 px-3 py-1.5 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 active:bg-slate-100 active:scale-95 disabled:opacity-40 text-slate-700 font-medium transition-all duration-75 touch-manipulation cursor-pointer"
             >
               Next
               <ChevronRight className="w-3.5 h-3.5" />

@@ -125,3 +125,4 @@ describe('PDF Zoom and Breakpoint Logic', () => {
     expect(zoom).toBe(0.6);
   });
 });
+

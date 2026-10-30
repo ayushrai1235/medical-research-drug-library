@@ -112,7 +112,7 @@ export default async function DrugDetailPage({
           <div className="flex items-center gap-2.5">
             <Link
               href={`/compare?ids=${drug.id}`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-md transition"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 active:scale-[0.97] border border-slate-300 rounded-lg transition-all duration-75 touch-manipulation cursor-pointer"
             >
               <ArrowLeftRight className="w-4 h-4 text-slate-600" />
               Compare with Another Drug
@@ -121,7 +121,7 @@ export default async function DrugDetailPage({
             <a
               href={`/api/download/individual?drugId=${drug.id}`}
               download
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-blue-900 hover:bg-blue-800 rounded-md shadow-sm transition"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-blue-900 hover:bg-blue-800 active:bg-blue-950 active:scale-[0.97] rounded-lg shadow-sm transition-all duration-75 touch-manipulation cursor-pointer"
             >
               <Download className="w-4 h-4" />
               Download PDF

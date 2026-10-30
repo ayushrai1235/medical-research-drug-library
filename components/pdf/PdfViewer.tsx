@@ -43,6 +43,7 @@ export function PdfViewer({
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const currentRenderTaskRef = useRef<any>(null);
+  const renderRafRef = useRef<number | null>(null);
   const currentPageObjRef = useRef<any>(null);
   const userHasManuallyZoomedRef = useRef<boolean>(false);
   const lastDeviceCategoryRef = useRef<DeviceCategory | null>(null);
@@ -208,7 +209,7 @@ export function PdfViewer({
     };
   }, [url, drugId, drugName, calculateFitToWidthScale, onDocumentLoaded, hasReportedView]);
 
-  // High-DPI, Device-Pixel-Ratio aware rendering with lazy cleanup
+  // High-DPI, Device-Pixel-Ratio aware rendering with lazy cleanup and RAF scheduling
   const renderPage = useCallback(async () => {
     if (!pdfDoc || !canvasRef.current) return;
 
@@ -220,69 +221,80 @@ export function PdfViewer({
       currentRenderTaskRef.current = null;
     }
 
+    if (renderRafRef.current) {
+      cancelAnimationFrame(renderRafRef.current);
+      renderRafRef.current = null;
+    }
+
     setIsRenderingPage(true);
 
-    try {
-      const page = await pdfDoc.getPage(currentPage);
-      currentPageObjRef.current = page;
+    // Yield to the browser compositor so button taps and scale labels paint in frame 0
+    renderRafRef.current = requestAnimationFrame(async () => {
+      try {
+        const page = await pdfDoc.getPage(currentPage);
+        currentPageObjRef.current = page;
 
-      const canvas = canvasRef.current;
-      if (!canvas) return;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
 
-      const context = canvas.getContext('2d', { alpha: false });
-      if (!context) return;
+        const context = canvas.getContext('2d', { alpha: false });
+        if (!context) return;
 
-      // 1. Calculate device pixel ratio (clamped between 1 and 3 for memory safety on high-DPI mobile)
-      const rawDpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-      const outputScale = Math.min(Math.max(rawDpr, 1), 3);
+        // 1. Calculate device pixel ratio (clamped between 1 and 3 for memory safety on high-DPI mobile)
+        const rawDpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+        const outputScale = Math.min(Math.max(rawDpr, 1), 3);
 
-      // 2. Base viewport at logical CSS zoom level
-      const viewport = page.getViewport({ scale, rotation });
+        // 2. Base viewport at logical CSS zoom level
+        const viewport = page.getViewport({ scale, rotation });
 
-      // 3. Separate canvas backing resolution (physical pixels) from CSS display dimensions
-      const displayWidth = Math.floor(viewport.width);
-      const displayHeight = Math.floor(viewport.height);
+        // 3. Separate canvas backing resolution (physical pixels) from CSS display dimensions
+        const displayWidth = Math.floor(viewport.width);
+        const displayHeight = Math.floor(viewport.height);
 
-      canvas.width = Math.floor(viewport.width * outputScale);
-      canvas.height = Math.floor(viewport.height * outputScale);
+        canvas.width = Math.floor(viewport.width * outputScale);
+        canvas.height = Math.floor(viewport.height * outputScale);
 
-      canvas.style.width = `${displayWidth}px`;
-      canvas.style.height = `${displayHeight}px`;
+        canvas.style.width = `${displayWidth}px`;
+        canvas.style.height = `${displayHeight}px`;
 
-      // 4. Set transform matrix so PDF.js draws into high-resolution buffer with vector crispness
-      const transform = outputScale !== 1
-        ? [outputScale, 0, 0, outputScale, 0, 0]
-        : null;
+        // 4. Set transform matrix so PDF.js draws into high-resolution buffer with vector crispness
+        const transform = outputScale !== 1
+          ? [outputScale, 0, 0, outputScale, 0, 0]
+          : null;
 
-      const renderContext = {
-        canvasContext: context,
-        viewport,
-        transform,
-      };
+        const renderContext = {
+          canvasContext: context,
+          viewport,
+          transform,
+        };
 
-      const renderTask = page.render(renderContext);
-      currentRenderTaskRef.current = renderTask;
+        const renderTask = page.render(renderContext);
+        currentRenderTaskRef.current = renderTask;
 
-      await renderTask.promise;
-    } catch (err: any) {
-      if (err?.name === 'RenderingCancelledException') {
-        // Expected cancellation when user quickly scrolls or resizes
-        return;
+        await renderTask.promise;
+      } catch (err: any) {
+        if (err?.name === 'RenderingCancelledException') {
+          // Expected cancellation when user quickly scrolls or resizes
+          return;
+        }
+        console.error('Page render error:', err);
+      } finally {
+        setIsRenderingPage(false);
+        currentRenderTaskRef.current = null;
       }
-      console.error('Page render error:', err);
-    } finally {
-      setIsRenderingPage(false);
-      currentRenderTaskRef.current = null;
-    }
+    });
   }, [pdfDoc, currentPage, scale, rotation]);
 
   useEffect(() => {
     renderPage();
   }, [renderPage]);
 
-  // Cleanup render tasks on unmount
+  // Cleanup render tasks and RAF on unmount
   useEffect(() => {
     return () => {
+      if (renderRafRef.current) {
+        cancelAnimationFrame(renderRafRef.current);
+      }
       if (currentRenderTaskRef.current) {
         try {
           currentRenderTaskRef.current.cancel();
@@ -370,7 +382,7 @@ export function PdfViewer({
             onClick={handlePrevPage}
             disabled={currentPage <= 1 || loading}
             aria-label="Previous Page"
-            className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-transparent text-slate-200 transition"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 active:bg-slate-600 active:scale-90 disabled:opacity-30 disabled:hover:bg-transparent text-slate-200 transition-all duration-75 touch-manipulation cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -382,7 +394,7 @@ export function PdfViewer({
             onClick={handleNextPage}
             disabled={currentPage >= numPages || loading}
             aria-label="Next Page"
-            className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-transparent text-slate-200 transition"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 active:bg-slate-600 active:scale-90 disabled:opacity-30 disabled:hover:bg-transparent text-slate-200 transition-all duration-75 touch-manipulation cursor-pointer"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -396,7 +408,7 @@ export function PdfViewer({
             disabled={scale <= 0.4 || loading}
             aria-label="Zoom Out"
             title="Zoom Out"
-            className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 disabled:opacity-30 text-slate-300 transition"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 active:bg-slate-600 active:scale-90 disabled:opacity-30 text-slate-300 transition-all duration-75 touch-manipulation cursor-pointer"
           >
             <ZoomOut className="w-4 h-4" />
           </button>
@@ -407,7 +419,7 @@ export function PdfViewer({
             disabled={loading}
             aria-label="Fit to Width"
             title="Fit to Width"
-            className="px-2 py-1 h-7 sm:h-8 text-xs font-semibold rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition flex items-center"
+            className="px-2.5 h-8 text-xs font-semibold rounded-lg bg-slate-700 hover:bg-slate-600 active:bg-slate-500 active:scale-95 text-slate-200 transition-all duration-75 flex items-center touch-manipulation cursor-pointer"
           >
             Fit
           </button>
@@ -422,7 +434,7 @@ export function PdfViewer({
             disabled={scale >= 3.0 || loading}
             aria-label="Zoom In"
             title="Zoom In"
-            className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 disabled:opacity-30 text-slate-300 transition"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 active:bg-slate-600 active:scale-90 disabled:opacity-30 text-slate-300 transition-all duration-75 touch-manipulation cursor-pointer"
           >
             <ZoomIn className="w-4 h-4" />
           </button>
@@ -433,7 +445,7 @@ export function PdfViewer({
             disabled={loading}
             aria-label="Rotate Page"
             title="Rotate 90 degrees"
-            className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 text-slate-300 transition"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 active:bg-slate-600 active:scale-90 text-slate-300 transition-all duration-75 touch-manipulation cursor-pointer"
           >
             <RotateCw className="w-4 h-4" />
           </button>
@@ -443,7 +455,7 @@ export function PdfViewer({
             onClick={toggleFullscreen}
             aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
             title="Toggle Fullscreen"
-            className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 text-slate-300 transition"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 active:bg-slate-600 active:scale-90 text-slate-300 transition-all duration-75 touch-manipulation cursor-pointer"
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
@@ -454,7 +466,7 @@ export function PdfViewer({
               download
               aria-label="Download original PDF"
               title="Download original PDF"
-              className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 text-blue-400 transition"
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 active:bg-slate-600 active:scale-90 text-blue-400 transition-all duration-75 touch-manipulation cursor-pointer"
             >
               <Download className="w-4 h-4" />
             </a>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeftRight,
@@ -22,6 +22,7 @@ export function SelectionBar({
 }: SelectionBarProps) {
   const router = useRouter();
   const [downloadingZip, setDownloadingZip] = useState<boolean>(false);
+  const [isNavigating, startTransition] = useTransition();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   if (selectedDrugIds.length === 0) {
@@ -34,7 +35,9 @@ export function SelectionBar({
       return;
     }
     const query = selectedDrugIds.join(',');
-    router.push(`/compare?ids=${encodeURIComponent(query)}`);
+    startTransition(() => {
+      router.push(`/compare?ids=${encodeURIComponent(query)}`);
+    });
   };
 
   const handleDownloadZip = async () => {
@@ -63,7 +66,7 @@ export function SelectionBar({
       document.body.removeChild(a);
       window.URL.revokeObjectURL(downloadUrl);
 
-      setToastMessage(`Successfully downloaded ${selectedDrugIds.length} PDFs as ZIP!`);
+      setToastMessage(`Downloaded ${selectedDrugIds.length} PDFs as ZIP!`);
       setTimeout(() => setToastMessage(null), 4000);
     } catch (err: any) {
       alert(`ZIP Download Error: ${err.message}`);
@@ -73,11 +76,11 @@ export function SelectionBar({
   };
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-full max-w-2xl px-4 animate-in fade-in slide-in-from-bottom-4 duration-200">
-      <div className="bg-slate-900 text-white rounded-xl shadow-2xl p-3 sm:p-4 border border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-full max-w-2xl px-4 animate-in fade-in slide-in-from-bottom-4 duration-150">
+      <div className="bg-slate-900 text-white rounded-2xl shadow-2xl p-3 sm:p-4 border border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3">
         {/* Count */}
         <div className="flex items-center gap-2">
-          <span className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">
+          <span className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold shrink-0">
             {selectedDrugIds.length}
           </span>
           <span className="text-xs sm:text-sm font-semibold text-slate-100">
@@ -86,38 +89,52 @@ export function SelectionBar({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
           <button
             type="button"
             onClick={handleCompare}
-            disabled={selectedDrugIds.length < 2}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-white text-xs font-semibold rounded-md shadow transition"
+            disabled={selectedDrugIds.length < 2 || isNavigating}
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 active:scale-[0.97] disabled:opacity-40 text-white text-xs font-semibold rounded-xl shadow-xs transition-all duration-75 touch-manipulation cursor-pointer"
             title={selectedDrugIds.length < 2 ? 'Select at least 2 drugs to compare' : 'Compare selected documents'}
           >
-            <ArrowLeftRight className="w-3.5 h-3.5" />
-            Compare {selectedDrugIds.length >= 2 ? `(${selectedDrugIds.length})` : ''}
+            {isNavigating ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Opening...</span>
+              </>
+            ) : (
+              <>
+                <ArrowLeftRight className="w-3.5 h-3.5" />
+                <span>Compare {selectedDrugIds.length >= 2 ? `(${selectedDrugIds.length})` : ''}</span>
+              </>
+            )}
           </button>
 
           <button
             type="button"
             onClick={handleDownloadZip}
             disabled={downloadingZip}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white text-xs font-semibold rounded-md shadow transition"
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 active:scale-[0.97] disabled:opacity-40 text-slate-200 text-xs font-semibold rounded-xl border border-slate-600 transition-all duration-75 touch-manipulation cursor-pointer"
           >
             {downloadingZip ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Archiving...</span>
+              </>
             ) : (
-              <FileArchive className="w-3.5 h-3.5" />
+              <>
+                <FileArchive className="w-3.5 h-3.5 text-slate-400" />
+                <span>ZIP ({selectedDrugIds.length})</span>
+              </>
             )}
-            Download ZIP
           </button>
 
           <button
             type="button"
             onClick={onClearSelection}
-            className="p-1.5 rounded-md hover:bg-slate-800 text-slate-400 hover:text-white transition"
-            aria-label="Clear selection"
+            aria-label="Clear Selection"
             title="Clear Selection"
+            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 active:scale-90 rounded-xl transition-all duration-75 touch-manipulation"
           >
             <X className="w-4 h-4" />
           </button>
@@ -125,14 +142,11 @@ export function SelectionBar({
       </div>
 
       {toastMessage && (
-        <div className="mt-2 text-center">
-          <span className="inline-flex items-center gap-1.5 bg-emerald-700 text-white text-xs px-3 py-1 rounded-full shadow">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            {toastMessage}
-          </span>
+        <div className="mt-2 bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium text-center shadow-lg animate-in fade-in flex items-center justify-center gap-1.5">
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          {toastMessage}
         </div>
       )}
     </div>
   );
 }
-

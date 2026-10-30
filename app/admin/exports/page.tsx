@@ -58,7 +58,7 @@ export default async function AdminExportsPage() {
               <a
                 href="/api/admin/export"
                 download
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-teal-700 hover:bg-teal-800 text-white text-xs sm:text-sm font-bold rounded-lg shadow-sm transition"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-teal-700 hover:bg-teal-800 active:bg-teal-900 active:scale-[0.98] text-white text-xs sm:text-sm font-bold rounded-lg shadow-sm transition-all duration-75 touch-manipulation cursor-pointer"
               >
                 <Download className="w-4 h-4" />
                 Download Complete Excel (.xlsx)
@@ -94,7 +94,7 @@ export default async function AdminExportsPage() {
               <a
                 href="/api/admin/export?downloadType=individual_pdf"
                 download
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-900 hover:bg-blue-800 text-white text-xs sm:text-sm font-bold rounded-lg shadow-sm transition"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-900 hover:bg-blue-800 active:bg-blue-950 active:scale-[0.98] text-white text-xs sm:text-sm font-bold rounded-lg shadow-sm transition-all duration-75 touch-manipulation cursor-pointer"
               >
                 <Download className="w-4 h-4" />
                 Download Downloads Only (.xlsx)

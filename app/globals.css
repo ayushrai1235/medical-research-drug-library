@@ -7,6 +7,13 @@
   --foreground: #0F172A;
 }
 
+/* Eliminate 300ms mobile tap delay and optimize touch responsiveness */
+html {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
@@ -15,10 +22,28 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Ensure all interactive controls have zero tap delay and smooth touch responsiveness */
+button, a, input, select, textarea, [role="button"], label {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Custom focus ring for WCAG accessibility */
 *:focus-visible {
   outline: 2px solid #2563EB;
   outline-offset: 2px;
+}
+
+/* Hardware-accelerated touch feedback for mobile buttons */
+.touch-press {
+  transform: translateZ(0);
+  transition: transform 75ms cubic-bezier(0, 0, 0.2, 1), opacity 75ms ease;
+  user-select: none;
+}
+
+.touch-press:active {
+  transform: scale(0.97) translateZ(0);
+  opacity: 0.88;
 }
 
 /* PDF Canvas container styling */
@@ -27,4 +52,3 @@ body {
   background-color: #FFFFFF;
   margin: 0 auto;
 }
-

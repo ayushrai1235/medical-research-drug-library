@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -26,6 +26,7 @@ export function ResearchSignInForm({ activeSession }: ResearchSignInFormProps) {
   const [displayName, setDisplayName] = useState(activeSession?.displayName || '');
   const [language, setLanguage] = useState<'en' | 'hi' | 'gu'>('en');
   const [loading, setLoading] = useState(false);
+  const [isNavigating, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,8 +61,9 @@ export function ResearchSignInForm({ activeSession }: ResearchSignInFormProps) {
         throw new Error(data.error || 'Failed to initialize research session');
       }
 
-      router.push('/library');
-      router.refresh();
+      startTransition(() => {
+        router.push('/library');
+      });
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred. Please try again.');
       setLoading(false);
@@ -193,13 +195,13 @@ export function ResearchSignInForm({ activeSession }: ResearchSignInFormProps) {
           {/* Primary Action Button */}
           <button
             type="submit"
-            disabled={loading}
-            className="w-full h-11 sm:h-12 inline-flex items-center justify-center gap-2 px-5 py-3 bg-blue-900 hover:bg-blue-800 disabled:opacity-60 text-white text-sm sm:text-base font-bold rounded-xl shadow-xs hover:shadow-md transition-all active:scale-[0.99] touch-manipulation"
+            disabled={loading || isNavigating}
+            className="w-full h-11 sm:h-12 inline-flex items-center justify-center gap-2 px-5 py-3 bg-blue-900 hover:bg-blue-800 active:bg-blue-950 active:scale-[0.98] disabled:opacity-60 text-white text-sm sm:text-base font-bold rounded-xl shadow-xs hover:shadow-md transition-all duration-75 touch-manipulation cursor-pointer"
           >
-            {loading ? (
+            {loading || isNavigating ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Initializing Session...</span>
+                <span>{isNavigating ? 'Opening Library...' : 'Initializing Session...'}</span>
               </>
             ) : (
               <>
@@ -218,7 +220,7 @@ export function ResearchSignInForm({ activeSession }: ResearchSignInFormProps) {
           <div className="mt-2.5">
             <Link
               href="/admin-login"
-              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-300 hover:border-slate-400 rounded-xl text-xs sm:text-sm font-semibold transition shadow-2xs touch-manipulation"
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 active:scale-[0.98] text-slate-700 hover:text-slate-900 border border-slate-300 hover:border-slate-400 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-75 shadow-2xs touch-manipulation cursor-pointer"
             >
               <Shield className="w-4 h-4 text-slate-600" />
               <span>Admin Sign In</span>
@@ -229,3 +231,4 @@ export function ResearchSignInForm({ activeSession }: ResearchSignInFormProps) {
     </div>
   );
 }
+

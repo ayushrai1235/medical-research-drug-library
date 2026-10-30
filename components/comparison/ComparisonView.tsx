@@ -216,7 +216,7 @@ export function ComparisonView({
               type="button"
               onClick={handleDownloadCombined}
               disabled={downloadingCombined || !url1 || !url2}
-              className="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white text-xs sm:text-sm font-medium rounded-md shadow-sm transition"
+              className="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-700 hover:bg-blue-800 active:bg-blue-900 active:scale-[0.98] disabled:opacity-50 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-xs transition-all duration-75 touch-manipulation cursor-pointer"
             >
               {downloadingCombined ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -230,7 +230,7 @@ export function ComparisonView({
               type="button"
               onClick={handleDownloadZip}
               disabled={downloadingZip}
-              className="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 text-xs sm:text-sm font-medium rounded-md border border-slate-300 transition"
+              className="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 active:scale-[0.98] disabled:opacity-50 text-slate-700 text-xs sm:text-sm font-semibold rounded-lg border border-slate-300 transition-all duration-75 touch-manipulation cursor-pointer"
             >
               {downloadingZip ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -298,7 +298,7 @@ export function ComparisonView({
             <button
               type="button"
               onClick={() => setMobileLayout('tabbed')}
-              className={`px-2.5 py-1 text-[11px] font-bold rounded transition ${
+              className={`px-2.5 py-1 text-[11px] font-bold rounded active:scale-95 transition-all duration-75 touch-manipulation cursor-pointer ${
                 mobileLayout === 'tabbed'
                   ? 'bg-white text-blue-900 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -309,7 +309,7 @@ export function ComparisonView({
             <button
               type="button"
               onClick={() => setMobileLayout('stacked')}
-              className={`px-2.5 py-1 text-[11px] font-bold rounded transition ${
+              className={`px-2.5 py-1 text-[11px] font-bold rounded active:scale-95 transition-all duration-75 touch-manipulation cursor-pointer ${
                 mobileLayout === 'stacked'
                   ? 'bg-white text-blue-900 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -325,7 +325,7 @@ export function ComparisonView({
             <button
               type="button"
               onClick={() => setActiveMobileTab('left')}
-              className={`flex-1 py-2 px-2 text-xs font-bold text-center border-b-2 truncate transition ${
+              className={`flex-1 py-2 px-2 text-xs font-bold text-center border-b-2 truncate active:bg-blue-100/60 transition-colors duration-75 touch-manipulation cursor-pointer ${
                 activeMobileTab === 'left'
                   ? 'border-blue-600 text-blue-700 bg-blue-50/40'
                   : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -336,7 +336,7 @@ export function ComparisonView({
             <button
               type="button"
               onClick={() => setActiveMobileTab('right')}
-              className={`flex-1 py-2 px-2 text-xs font-bold text-center border-b-2 truncate transition ${
+              className={`flex-1 py-2 px-2 text-xs font-bold text-center border-b-2 truncate active:bg-blue-100/60 transition-colors duration-75 touch-manipulation cursor-pointer ${
                 activeMobileTab === 'right'
                   ? 'border-blue-600 text-blue-700 bg-blue-50/40'
                   : 'border-transparent text-slate-500 hover:text-slate-700'
