@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { ArrowRight, BookOpen, Shield, FileCheck, Search, Download } from 'lucide-react';
+import { FileCheck, Search, Download, Shield, BookOpen } from 'lucide-react';
 import { getResearchSession } from '@/lib/auth/session';
 import { getAdminUser } from '@/lib/auth/admin';
 import { Header } from '@/components/library/Header';
+import { ResearchSignInForm } from '@/components/auth/ResearchSignInForm';
 
 export default async function LandingPage() {
   const [researchSession, adminAuth] = await Promise.all([
@@ -14,100 +15,78 @@ export default async function LandingPage() {
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
       <Header
         researchSession={researchSession}
-        adminUser={adminAuth ? { id: adminAuth.user.id, email: adminAuth.user.email ?? null, displayName: adminAuth.profile.displayName } : null}
+        adminUser={
+          adminAuth
+            ? {
+                id: adminAuth.user.id,
+                email: adminAuth.user.email ?? null,
+                displayName: adminAuth.profile.displayName,
+              }
+            : null
+        }
       />
 
-      <main className="flex-1 max-w-5xl mx-auto px-4 py-12 sm:py-20 flex flex-col items-center justify-center text-center">
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-900 text-xs font-semibold uppercase tracking-wider mb-6">
+      <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-8 sm:py-14 flex flex-col items-center justify-center text-center">
+        {/* Verification Badge */}
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-900 text-xs font-semibold uppercase tracking-wider mb-4 sm:mb-6">
           <FileCheck className="w-4 h-4 text-blue-600" />
           Official Medical Research Repository
         </div>
 
         {/* Heading & Subheading */}
-        <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight max-w-3xl leading-tight">
+        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight max-w-3xl leading-tight">
           Medical Research Drug Library
         </h1>
-        <p className="mt-4 text-base sm:text-lg text-slate-600 max-w-2xl font-normal">
-          Access research documents and drug information across 7 therapeutic categories and 19 verified drug publications.
+        <p className="mt-2.5 sm:mt-3 text-sm sm:text-base text-slate-600 max-w-xl font-normal leading-relaxed">
+          Access verified clinical publications across 7 therapeutic categories and 19 drug publications.
         </p>
 
-        {/* First Screen Entry Options: Research User vs Admin Login */}
-        <div className="mt-10 sm:mt-12 w-full max-w-xl grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-          {/* Research User Card */}
-          <Link
-            href="/research-entry"
-            className="group relative flex flex-col justify-between p-6 bg-white border-2 border-slate-200 hover:border-blue-600 rounded-xl shadow-xs hover:shadow-md transition-all duration-150"
-          >
-            <div>
-              <div className="w-12 h-12 rounded-lg bg-blue-50 group-hover:bg-blue-600 text-blue-700 group-hover:text-white flex items-center justify-center transition-colors mb-4">
-                <BookOpen className="w-6 h-6" />
-              </div>
-              <h2 className="text-lg font-bold text-slate-900 group-hover:text-blue-900 transition">
-                Continue as Research User
-              </h2>
-              <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">
-                Enter your display name to browse the 19 drug documents, view PDFs, and run side-by-side comparisons.
-              </p>
-            </div>
-            <div className="mt-6 flex items-center gap-2 text-xs font-bold text-blue-700 group-hover:text-blue-800">
-              <span>Enter Research Library</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </div>
-          </Link>
-
-          {/* Admin Login Card */}
-          <Link
-            href="/admin-login"
-            className="group relative flex flex-col justify-between p-6 bg-white border-2 border-slate-200 hover:border-slate-800 rounded-xl shadow-xs hover:shadow-md transition-all duration-150"
-          >
-            <div>
-              <div className="w-12 h-12 rounded-lg bg-slate-100 group-hover:bg-slate-900 text-slate-700 group-hover:text-white flex items-center justify-center transition-colors mb-4">
-                <Shield className="w-6 h-6" />
-              </div>
-              <h2 className="text-lg font-bold text-slate-900 group-hover:text-slate-900 transition">
-                Admin Login
-              </h2>
-              <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">
-                Sign in with authorized credentials to inspect researcher activity logs, view live metrics, and export data.
-              </p>
-            </div>
-            <div className="mt-6 flex items-center gap-2 text-xs font-bold text-slate-700 group-hover:text-slate-900">
-              <span>Access Administrator Portal</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </div>
-          </Link>
+        {/* Primary Research Sign-In Section */}
+        <div className="mt-8 sm:mt-10 w-full flex justify-center">
+          <ResearchSignInForm activeSession={researchSession} />
         </div>
 
-        {/* Feature Highlights Footer */}
-        <div className="mt-16 sm:mt-24 pt-8 border-t border-slate-200 w-full grid grid-cols-1 sm:grid-cols-3 gap-6 text-left">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded bg-blue-50 text-blue-700">
+        {/* Feature Highlights Grid */}
+        <div className="mt-12 sm:mt-16 pt-8 border-t border-slate-200 w-full grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6 text-left">
+          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-white/70 border border-slate-200/80 shadow-2xs">
+            <div className="p-2 rounded-lg bg-blue-50 text-blue-700 shrink-0">
               <Search className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">7 Clinical Categories</h3>
-              <p className="text-xs text-slate-500 mt-1">Preserved approved groupings including Biguanides, SGLT-2, and DPP-4 inhibitors.</p>
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                7 Approved Categories
+              </h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                Biguanides, DPP-4, TZDs, Sulfonylureas, Alpha-glucosidase, SGLT-2, and Non-Sulphonylureas.
+              </p>
             </div>
           </div>
 
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded bg-teal-50 text-teal-700">
+          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-white/70 border border-slate-200/80 shadow-2xs">
+            <div className="p-2 rounded-lg bg-teal-50 text-teal-700 shrink-0">
               <FileCheck className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">In-App PDF Viewer</h3>
-              <p className="text-xs text-slate-500 mt-1">High-fidelity original documents rendered with page navigation, zoom, and fullscreen.</p>
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                Crisp High-DPI PDF Viewer
+              </h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                Device-pixel-ratio vector rendering with device-tailored zoom (60% mobile, 80% desktop, Fit tablet).
+              </p>
             </div>
           </div>
 
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded bg-slate-100 text-slate-700">
+          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-white/70 border border-slate-200/80 shadow-2xs">
+            <div className="p-2 rounded-lg bg-indigo-50 text-indigo-700 shrink-0">
               <Download className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Export & Compare</h3>
-              <p className="text-xs text-slate-500 mt-1">Side-by-side comparison, combined landscape PDF generation, and multi-PDF ZIP archives.</p>
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                Export & Comparison
+              </h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                Mobile-optimized dual-pane viewer, multi-PDF ZIP archives, and combined landscape comparison PDFs.
+              </p>
             </div>
           </div>
         </div>

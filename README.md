@@ -8,7 +8,10 @@ Built with **Next.js 16 (App Router)**, **React 19**, **TypeScript**, **Supabase
 
 ## 1. Product Features & Requirements
 
-- **Landing Entry Selection**: Directs visitors to either **Research User** access or **Admin Login**.
+- **Redesigned Landing & Sign-In Experience**:
+  - Research User sign-in is the primary action directly on the landing page (`/`), with display-name entry, language preference, and direct access.
+  - "Are you an Admin?" section with "Admin Sign In" secondary button navigating to the authenticated administrator login (`/admin-login`).
+  - Server-verified Supabase authentication with role verification in `profiles` (no public registration).
 - **Research User Experience**:
   - Enters a display name without password friction in v1.
   - Chooses preferred language (**English** is active; **Hindi** and **Gujarati** are marked "Coming Soon").
@@ -21,8 +24,12 @@ Built with **Next.js 16 (App Router)**, **React 19**, **TypeScript**, **Supabase
   5. **Alpha-glucosidase Inhibitors**: Acarbose, Miglitol, Voglibose
   6. **SGLT-2 Inhibitors**: Empagliflozin, Canagliflozin, Dapagliflozin
   7. **Non-Sulphonylureas**: Nateglinide, Repaglinide, Semaglutide
-- **In-App PDF Viewer**: High-fidelity PDF.js viewer with page navigation, zoom, fit-to-width, rotation, fullscreen, and direct download fallback.
-- **Side-by-Side Comparison**: Independent dual-pane viewer for comparing two research papers simultaneously.
+- **High-DPI In-App PDF Viewer (Device Pixel Ratio Aware)**:
+  - Vector-sharp rendering on Retina, high-DPI mobile screens, and laptops by separating physical canvas backing resolution (`canvas.width * outputScale`) from CSS display dimensions (`canvas.style.width`).
+  - Device-tailored default zoom: **60% on mobile (<768px)**, **80% on desktop/laptop (>=1024px)**, and **Fit to Width on tablets (768px-1023px)**.
+  - Recalculates default zoom when crossing device breakpoints while strictly preserving user manual zoom within the same device category.
+  - Memory-safe lazy rendering with in-flight cancellation to protect mobile memory.
+- **Side-by-Side Comparison**: Independent dual-pane viewer for comparing two research papers simultaneously, featuring mobile tabs and stacked view modes.
 - **Downloads**:
   - **Individual PDF**: Direct streaming download with audit tracking.
   - **Multi-PDF ZIP Archive**: Bundles multiple selected publications into a single ZIP using `fflate`.

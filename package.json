@@ -9,6 +9,7 @@
     "start": "next start -H 0.0.0.0 -p 3000",
     "lint": "next lint",
     "test": "vitest run",
+    "test:regression": "node scripts/test-regression.mjs",
     "manifest:generate": "node scripts/generate-drug-manifest.mjs",
     "manifest:verify": "node scripts/verify-drug-pdfs.mjs",
     "manifest:upload": "node scripts/upload-drug-pdfs.mjs"

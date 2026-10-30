@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { BookOpen, ArrowLeft, Loader2, Info, Check, Globe } from 'lucide-react';
+import { BookOpen, ArrowLeft, Loader2, Info, Check, Globe, Shield } from 'lucide-react';
 
 export default function ResearchEntryPage() {
   const router = useRouter();
@@ -187,6 +187,22 @@ export default function ResearchEntryPage() {
               )}
             </button>
           </form>
+
+          {/* Admin Navigation */}
+          <div className="mt-6 pt-5 border-t border-slate-200 text-center">
+            <p className="text-xs text-slate-500 font-medium">
+              Are you an Admin?
+            </p>
+            <div className="mt-2">
+              <Link
+                href="/admin-login"
+                className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-lg text-xs font-semibold transition"
+              >
+                <Shield className="w-3.5 h-3.5 text-slate-600" />
+                <span>Admin Sign In</span>
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </div>

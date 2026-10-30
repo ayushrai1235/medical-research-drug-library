@@ -46,6 +46,7 @@ export function ComparisonView({
   const [error2, setError2] = useState<string | null>(null);
 
   const [activeMobileTab, setActiveMobileTab] = useState<'left' | 'right'>('left');
+  const [mobileLayout, setMobileLayout] = useState<'tabbed' | 'stacked'>('tabbed');
   const [downloadingZip, setDownloadingZip] = useState<boolean>(false);
   const [downloadingCombined, setDownloadingCombined] = useState<boolean>(false);
   const [successToast, setSuccessToast] = useState<string | null>(null);
@@ -289,46 +290,78 @@ export function ComparisonView({
         </div>
       </div>
 
-      {/* Mobile Tab Switcher */}
-      <div className="flex sm:hidden border-b border-slate-200 bg-white rounded-t-lg">
-        <button
-          type="button"
-          onClick={() => setActiveMobileTab('left')}
-          className={`flex-1 py-2 text-xs font-medium text-center border-b-2 ${
-            activeMobileTab === 'left'
-              ? 'border-blue-600 text-blue-600 bg-blue-50/50'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          {selectedDrug1?.name || 'Pane A'}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveMobileTab('right')}
-          className={`flex-1 py-2 text-xs font-medium text-center border-b-2 ${
-            activeMobileTab === 'right'
-              ? 'border-blue-600 text-blue-600 bg-blue-50/50'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          {selectedDrug2?.name || 'Pane B'}
-        </button>
+      {/* Mobile Layout & Tab Controls */}
+      <div className="flex sm:hidden flex-col bg-white rounded-lg border border-slate-200 overflow-hidden shadow-2xs">
+        <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-200 text-xs">
+          <span className="font-semibold text-slate-700">Mobile View Style:</span>
+          <div className="inline-flex rounded-md p-0.5 bg-slate-200/80">
+            <button
+              type="button"
+              onClick={() => setMobileLayout('tabbed')}
+              className={`px-2.5 py-1 text-[11px] font-bold rounded transition ${
+                mobileLayout === 'tabbed'
+                  ? 'bg-white text-blue-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Tabs
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileLayout('stacked')}
+              className={`px-2.5 py-1 text-[11px] font-bold rounded transition ${
+                mobileLayout === 'stacked'
+                  ? 'bg-white text-blue-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Stacked
+            </button>
+          </div>
+        </div>
+
+        {mobileLayout === 'tabbed' && (
+          <div className="flex border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setActiveMobileTab('left')}
+              className={`flex-1 py-2 px-2 text-xs font-bold text-center border-b-2 truncate transition ${
+                activeMobileTab === 'left'
+                  ? 'border-blue-600 text-blue-700 bg-blue-50/40'
+                  : 'border-transparent text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              Pane A: {selectedDrug1?.name || 'Drug 1'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveMobileTab('right')}
+              className={`flex-1 py-2 px-2 text-xs font-bold text-center border-b-2 truncate transition ${
+                activeMobileTab === 'right'
+                  ? 'border-blue-600 text-blue-700 bg-blue-50/40'
+                  : 'border-transparent text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              Pane B: {selectedDrug2?.name || 'Drug 2'}
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Dual Viewer Panes Grid */}
+      {/* Dual Viewer Panes Grid (Side-by-side on desktop/tablet, Tabbed or Stacked on mobile) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 min-h-[600px]">
         {/* Left Pane (Drug 1) */}
         <div
           className={`flex flex-col bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm ${
-            activeMobileTab === 'right' ? 'hidden sm:flex' : 'flex'
+            mobileLayout === 'tabbed' && activeMobileTab === 'right' ? 'hidden sm:flex' : 'flex'
           }`}
         >
           <div className="px-4 py-2 bg-slate-100 border-b border-slate-200 flex items-center justify-between text-xs font-semibold text-slate-800">
-            <span className="flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5 text-blue-600" />
-              {selectedDrug1?.name}
+            <span className="flex items-center gap-1.5 truncate">
+              <FileText className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+              Pane A: {selectedDrug1?.name}
             </span>
-            <span className="text-slate-500 text-[11px]">Original Document</span>
+            <span className="text-slate-500 text-[11px] shrink-0">Original Document</span>
           </div>
           <div className="flex-1 min-h-[500px]">
             {loading1 ? (
@@ -355,15 +388,15 @@ export function ComparisonView({
         {/* Right Pane (Drug 2) */}
         <div
           className={`flex flex-col bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm ${
-            activeMobileTab === 'left' ? 'hidden sm:flex' : 'flex'
+            mobileLayout === 'tabbed' && activeMobileTab === 'left' ? 'hidden sm:flex' : 'flex'
           }`}
         >
           <div className="px-4 py-2 bg-slate-100 border-b border-slate-200 flex items-center justify-between text-xs font-semibold text-slate-800">
-            <span className="flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5 text-blue-600" />
-              {selectedDrug2?.name}
+            <span className="flex items-center gap-1.5 truncate">
+              <FileText className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+              Pane B: {selectedDrug2?.name}
             </span>
-            <span className="text-slate-500 text-[11px]">Original Document</span>
+            <span className="text-slate-500 text-[11px] shrink-0">Original Document</span>
           </div>
           <div className="flex-1 min-h-[500px]">
             {loading2 ? (
