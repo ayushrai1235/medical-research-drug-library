@@ -30,16 +30,13 @@ export default async function LandingPage() {
         {/* Verification Badge */}
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-900 text-xs font-semibold uppercase tracking-wider mb-4 sm:mb-6">
           <FileCheck className="w-4 h-4 text-blue-600" />
-          Official Medical Research Repository
+          Official diabetes meds Repository
         </div>
 
-        {/* Heading & Subheading */}
-        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight max-w-3xl leading-tight">
-          Medical Research Drug Library
+        {/* Heading */}
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight max-w-3xl leading-tight">
+          Know your diabetes meds !
         </h1>
-        <p className="mt-2.5 sm:mt-3 text-sm sm:text-base text-slate-600 max-w-xl font-normal leading-relaxed">
-          Access verified clinical publications across 7 therapeutic categories and 19 drug publications.
-        </p>
 
         {/* Primary Research Sign-In Section */}
         <div className="mt-8 sm:mt-10 w-full flex justify-center">
@@ -47,7 +44,7 @@ export default async function LandingPage() {
         </div>
 
         {/* Feature Highlights Grid */}
-        <div className="mt-12 sm:mt-16 pt-8 border-t border-slate-200 w-full grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6 text-left">
+        {/* <div className="mt-12 sm:mt-16 pt-8 border-t border-slate-200 w-full grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6 text-left">
           <div className="flex items-start gap-3 p-3.5 rounded-xl bg-white/70 border border-slate-200/80 shadow-2xs">
             <div className="p-2 rounded-lg bg-blue-50 text-blue-700 shrink-0">
               <Search className="w-5 h-5" />
@@ -89,7 +86,7 @@ export default async function LandingPage() {
               </p>
             </div>
           </div>
-        </div>
+        </div> */}
       </main>
     </div>
   );

@@ -79,7 +79,7 @@ export function ResearchSignInForm({ activeSession }: ResearchSignInFormProps) {
             <div className="flex items-center gap-2.5 min-w-0">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
               <div className="truncate">
-                <p className="text-xs text-blue-700 font-medium">Active Research Session</p>
+                <p className="text-xs text-blue-700 font-medium">Active Session</p>
                 <p className="text-sm font-bold text-blue-950 truncate">
                   {activeSession.displayName}
                 </p>
@@ -104,7 +104,7 @@ export function ResearchSignInForm({ activeSession }: ResearchSignInFormProps) {
           </div>
           <div>
             <h2 className="text-lg sm:text-xl font-bold text-slate-900 leading-snug">
-              Research User Sign In
+               User Sign In
             </h2>
             <p className="text-xs text-slate-500">
               Enter your display name to start or resume exploring
@@ -125,14 +125,14 @@ export function ResearchSignInForm({ activeSession }: ResearchSignInFormProps) {
               htmlFor="landingDisplayName"
               className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5"
             >
-              Researcher Display Name <span className="text-red-500">*</span>
+               Display Name <span className="text-red-500">*</span>
             </label>
             <input
               id="landingDisplayName"
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="e.g. Dr. Jane Smith, Clinical Investigator"
+              placeholder="Enter your name"
               required
               maxLength={50}
               className="w-full h-11 sm:h-12 px-3.5 text-sm sm:text-base bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
@@ -205,14 +205,14 @@ export function ResearchSignInForm({ activeSession }: ResearchSignInFormProps) {
               </>
             ) : (
               <>
-                <span>Continue as Research User</span>
+                <span>Continue as User</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
         </form>
 
-        {/* Separator & Admin Navigation */}
+        {/* Separator & Admin Navigation
         <div className="mt-6 pt-5 border-t border-slate-200 text-center">
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
             Are you an Admin?
@@ -226,7 +226,7 @@ export function ResearchSignInForm({ activeSession }: ResearchSignInFormProps) {
               <span>Admin Sign In</span>
             </Link>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

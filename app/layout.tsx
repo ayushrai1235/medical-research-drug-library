@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Medical Research Drug Library',
+  title: 'Know your diabetes meds !',
   description: 'Clinical research documents across 7 categories and 19 approved drug publications.',
 };
 

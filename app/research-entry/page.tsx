@@ -70,10 +70,10 @@ export default function ResearchEntryPage() {
             <BookOpen className="w-6 h-6" />
           </div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-            Research User Access
+           User Access
           </h1>
           <p className="mt-1 text-xs text-slate-600">
-            Enter your display name to begin your research session.
+            Enter your display name to begin your session.
           </p>
         </div>
 
@@ -96,7 +96,7 @@ export default function ResearchEntryPage() {
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="e.g. Dr. Jane Smith, Clinical Investigator"
+                placeholder="Enter your name"
                 required
                 autoFocus
                 maxLength={50}
