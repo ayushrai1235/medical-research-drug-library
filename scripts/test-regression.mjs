@@ -48,16 +48,14 @@ async function runRegression() {
   try {
     const res = await fetch('http://127.0.0.1:3000/');
     const text = await res.text();
-    const hasResearchSection = text.includes('Research User Sign In');
-    const hasContinueBtn = text.includes('Continue as Research User');
-    const hasAdminQuestion = text.includes('Are you an Admin?');
-    const hasAdminSignIn = text.includes('Admin Sign In');
-    const hasAdminLoginHref = text.includes('href="/admin-login"');
+    const hasSignInSection = text.includes('User Sign In');
+    const hasContinueBtn = text.includes('Continue as User');
+    const hasHeadline = text.includes('Know your diabetes meds !');
 
-    const passed = res.status === 200 && hasResearchSection && hasContinueBtn && hasAdminQuestion && hasAdminSignIn && hasAdminLoginHref;
-    results.push({ name: '1. Landing Page Redesign', passed, details: `Status ${res.status}, hasResearchSection=${hasResearchSection}, hasAdminQuestion=${hasAdminQuestion}` });
+    const passed = res.status === 200 && hasSignInSection && hasContinueBtn && hasHeadline;
+    results.push({ name: '1. Landing Page Content', passed, details: `Status ${res.status}, hasSignInSection=${hasSignInSection}, hasHeadline=${hasHeadline}` });
   } catch (e) {
-    results.push({ name: '1. Landing Page Redesign', passed: false, details: e.message });
+    results.push({ name: '1. Landing Page Content', passed: false, details: e.message });
   }
 
   // Test 2: Admin Login page

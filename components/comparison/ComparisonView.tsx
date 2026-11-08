@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { PdfViewer } from '@/components/pdf/PdfViewer';
+import { loadComparisonConcurrently } from '@/lib/pdf/client-pdf';
 import {
   Download,
   FileArchive,
@@ -38,8 +39,8 @@ export function ComparisonView({
     initialDrug2Id || (drugs.length > 1 ? drugs[1]?.id : drugs[0]?.id || '')
   );
 
-  const [url1, setUrl1] = useState<string | null>(null);
-  const [url2, setUrl2] = useState<string | null>(null);
+  const [buffer1, setBuffer1] = useState<ArrayBuffer | null>(null);
+  const [buffer2, setBuffer2] = useState<ArrayBuffer | null>(null);
   const [loading1, setLoading1] = useState<boolean>(true);
   const [loading2, setLoading2] = useState<boolean>(true);
   const [error1, setError1] = useState<string | null>(null);
@@ -54,51 +55,38 @@ export function ComparisonView({
   const selectedDrug1 = drugs.find((d) => d.id === drug1Id);
   const selectedDrug2 = drugs.find((d) => d.id === drug2Id);
 
-  // Fetch signed URL for Drug 1
+  // Concurrently stream both documents in parallel with instant cache hits
   useEffect(() => {
-    if (!drug1Id) return;
+    if (!drug1Id || !drug2Id) return;
+
     setLoading1(true);
-    setError1(null);
-
-    fetch('/api/files/signed-url', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ drugId: drug1Id }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.signedUrl) {
-          setUrl1(data.signedUrl);
-        } else {
-          setError1(data.error || 'Failed to get document URL');
-        }
-      })
-      .catch((err) => setError1(err.message))
-      .finally(() => setLoading1(false));
-  }, [drug1Id]);
-
-  // Fetch signed URL for Drug 2
-  useEffect(() => {
-    if (!drug2Id) return;
     setLoading2(true);
+    setError1(null);
     setError2(null);
 
-    fetch('/api/files/signed-url', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ drugId: drug2Id }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.signedUrl) {
-          setUrl2(data.signedUrl);
-        } else {
-          setError2(data.error || 'Failed to get document URL');
-        }
-      })
-      .catch((err) => setError2(err.message))
-      .finally(() => setLoading2(false));
-  }, [drug2Id]);
+    const cleanup = loadComparisonConcurrently(
+      drug1Id,
+      drug2Id,
+      (buf) => {
+        setBuffer1(buf);
+        setLoading1(false);
+      },
+      (buf) => {
+        setBuffer2(buf);
+        setLoading2(false);
+      },
+      (err) => {
+        setError1(err.message || 'Failed to load document');
+        setLoading1(false);
+      },
+      (err) => {
+        setError2(err.message || 'Failed to load document');
+        setLoading2(false);
+      }
+    );
+
+    return cleanup;
+  }, [drug1Id, drug2Id]);
 
   // Track comparison_opened event
   useEffect(() => {
@@ -215,7 +203,7 @@ export function ComparisonView({
             <button
               type="button"
               onClick={handleDownloadCombined}
-              disabled={downloadingCombined || !url1 || !url2}
+              disabled={downloadingCombined || !buffer1 || !buffer2}
               className="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-700 hover:bg-blue-800 active:bg-blue-900 active:scale-[0.98] disabled:opacity-50 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-xs transition-all duration-75 touch-manipulation cursor-pointer"
             >
               {downloadingCombined ? (
@@ -374,9 +362,9 @@ export function ComparisonView({
                 <AlertCircle className="w-8 h-8 mb-2" />
                 <p className="text-xs font-medium">{error1}</p>
               </div>
-            ) : url1 ? (
+            ) : buffer1 ? (
               <PdfViewer
-                url={url1}
+                pdfBuffer={buffer1}
                 drugId={drug1Id}
                 drugName={selectedDrug1?.name}
                 height="100%"
@@ -409,9 +397,9 @@ export function ComparisonView({
                 <AlertCircle className="w-8 h-8 mb-2" />
                 <p className="text-xs font-medium">{error2}</p>
               </div>
-            ) : url2 ? (
+            ) : buffer2 ? (
               <PdfViewer
-                url={url2}
+                pdfBuffer={buffer2}
                 drugId={drug2Id}
                 drugName={selectedDrug2?.name}
                 height="100%"

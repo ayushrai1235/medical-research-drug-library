@@ -1,32 +1,10 @@
 import { describe, it, expect } from 'vitest';
-
-// Device breakpoint and zoom resolution helper tests
-function getDeviceCategory(width: number): 'mobile' | 'tablet' | 'desktop' {
-  if (width < 768) return 'mobile';
-  if (width < 1024) return 'tablet';
-  return 'desktop';
-}
-
-function calculateDefaultZoom(category: 'mobile' | 'tablet' | 'desktop', containerWidth?: number, pageUnscaledWidth = 595.28): number {
-  if (category === 'mobile') return 0.6; // 60% for mobile
-  if (category === 'desktop') return 0.8; // 80% for desktop/laptop
-  
-  // Tablet: Fit to Width
-  const available = Math.max((containerWidth || 768) - 40, 200);
-  const fit = available / pageUnscaledWidth;
-  return Math.round(Math.min(Math.max(fit, 0.4), 2.5) * 100) / 100;
-}
-
-function computeBackingResolution(logicalWidth: number, logicalHeight: number, dpr: number) {
-  const safeDpr = Math.min(Math.max(dpr, 1), 3);
-  return {
-    canvasWidth: Math.floor(logicalWidth * safeDpr),
-    canvasHeight: Math.floor(logicalHeight * safeDpr),
-    cssWidth: `${Math.floor(logicalWidth)}px`,
-    cssHeight: `${Math.floor(logicalHeight)}px`,
-    transform: safeDpr !== 1 ? [safeDpr, 0, 0, safeDpr, 0, 0] : null,
-  };
-}
+import {
+  getDeviceCategory,
+  calculateDefaultZoom,
+  computeBackingResolution,
+  clampZoom,
+} from '../lib/pdf/zoom-utils';
 
 describe('PDF Zoom and Breakpoint Logic', () => {
   it('correctly maps screen widths to device categories', () => {

@@ -32,13 +32,62 @@ export async function POST(request: Request) {
       );
     }
 
-    const { drugId } = parsed.data;
     const supabase = getServiceRoleSupabaseClient();
 
-    // 3. Look up drug record
+    // 3. Batch request support (parallel processing for comparison)
+    if ('drugIds' in parsed.data) {
+      const { drugIds } = parsed.data;
+      const { data: drugs, error: dbError } = await supabase
+        .from('drugs')
+        .select('id, name, slug, pdf_storage_path, pdf_status, updated_at, is_active')
+        .in('id', drugIds);
+
+      if (dbError || !drugs) {
+        return NextResponse.json({ error: 'Failed to look up drug records' }, { status: 500 });
+      }
+
+      const urls: Record<
+        string,
+        { signedUrl: string; drugName: string; slug: string; updatedAt: string }
+      > = {};
+
+      await Promise.all(
+        drugs.map(async (drug: any) => {
+          if (drug.pdf_storage_path && drug.pdf_status === 'uploaded') {
+            const { data: signedData } = await supabase.storage
+              .from(BUCKET_NAME)
+              .createSignedUrl(drug.pdf_storage_path, 600);
+            if (signedData?.signedUrl) {
+              urls[drug.id] = {
+                signedUrl: signedData.signedUrl,
+                drugName: drug.name,
+                slug: drug.slug,
+                updatedAt: drug.updated_at,
+              };
+            }
+          }
+        })
+      );
+
+      return NextResponse.json(
+        {
+          success: true,
+          urls,
+          count: Object.keys(urls).length,
+        },
+        {
+          headers: {
+            'Cache-Control': 'private, no-cache',
+          },
+        }
+      );
+    }
+
+    // 4. Single drug request
+    const { drugId } = parsed.data;
     const { data: drug, error: dbError } = await supabase
       .from('drugs')
-      .select('id, name, slug, pdf_storage_path, pdf_status, is_active')
+      .select('id, name, slug, pdf_storage_path, pdf_status, updated_at, is_active')
       .eq('id', drugId)
       .single();
 
@@ -46,17 +95,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Drug record not found' }, { status: 404 });
     }
 
-    if (!drug.pdf_storage_path || drug.pdf_status !== 'uploaded') {
+    const drugData = drug as any;
+    if (!drugData.pdf_storage_path || drugData.pdf_status !== 'uploaded') {
       return NextResponse.json(
-        { error: `PDF document for ${drug.name} is currently unavailable (${drug.pdf_status})` },
+        { error: `PDF document for ${drugData.name} is currently unavailable (${drugData.pdf_status})` },
         { status: 404 }
       );
     }
 
-    // 4. Generate short-lived signed URL (5 minutes)
+    // Generate short-lived signed URL (10 minutes)
     const { data: signedData, error: signError } = await supabase.storage
       .from(BUCKET_NAME)
-      .createSignedUrl(drug.pdf_storage_path, 300);
+      .createSignedUrl(drugData.pdf_storage_path, 600);
 
     if (signError || !signedData?.signedUrl) {
       return NextResponse.json(
@@ -65,14 +115,22 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      signedUrl: signedData.signedUrl,
-      drugName: drug.name,
-      slug: drug.slug,
-      storagePath: drug.pdf_storage_path,
-      expiresInSeconds: 300,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        signedUrl: signedData.signedUrl,
+        drugName: drugData.name,
+        slug: drugData.slug,
+        storagePath: drugData.pdf_storage_path,
+        updatedAt: drugData.updated_at,
+        expiresInSeconds: 600,
+      },
+      {
+        headers: {
+          'Cache-Control': 'private, no-cache',
+        },
+      }
+    );
   } catch (error: any) {
     console.error('Signed URL generation error:', error);
     return NextResponse.json(

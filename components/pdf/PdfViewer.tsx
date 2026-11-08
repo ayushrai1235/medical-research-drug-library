@@ -13,10 +13,25 @@ import {
   AlertCircle,
   Loader2,
   FileText,
+  Sparkles,
 } from 'lucide-react';
+import {
+  getDeviceCategory,
+  calculateDefaultZoom,
+  computeBackingResolution,
+  clampZoom,
+  DeviceCategory,
+} from '@/lib/pdf/zoom-utils';
+import {
+  getSingletonPdfJs,
+  getCachedPdfBuffer,
+  fetchPdfBuffer,
+  loadSinglePagePdf,
+} from '@/lib/pdf/client-pdf';
 
 interface PdfViewerProps {
-  url: string;
+  url?: string;
+  pdfBuffer?: ArrayBuffer;
   drugId?: string;
   drugName?: string;
   onDocumentLoaded?: (pageCount: number) => void;
@@ -24,16 +39,9 @@ interface PdfViewerProps {
   height?: string;
 }
 
-type DeviceCategory = 'mobile' | 'tablet' | 'desktop';
-
-function getDeviceCategory(width: number): DeviceCategory {
-  if (width < 768) return 'mobile';
-  if (width < 1024) return 'tablet';
-  return 'desktop';
-}
-
 export function PdfViewer({
   url,
+  pdfBuffer: initialBuffer,
   drugId,
   drugName = 'Drug Document',
   onDocumentLoaded,
@@ -41,6 +49,8 @@ export function PdfViewer({
   height = 'calc(100vh - 220px)',
 }: PdfViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const canvasWrapperRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const currentRenderTaskRef = useRef<any>(null);
   const renderRafRef = useRef<number | null>(null);
@@ -48,9 +58,16 @@ export function PdfViewer({
   const userHasManuallyZoomedRef = useRef<boolean>(false);
   const lastDeviceCategoryRef = useRef<DeviceCategory | null>(null);
 
+  // Gesture handling refs for smooth 60fps pinch-to-zoom
+  const touchStartDistRef = useRef<number>(0);
+  const touchStartScaleRef = useRef<number>(0.8);
+  const isPinchingRef = useRef<boolean>(false);
+  const currentPinchScaleRef = useRef<number>(0.8);
+  const lastTapRef = useRef<{ time: number; x: number; y: number }>({ time: 0, x: 0, y: 0 });
+
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [numPages, setNumPages] = useState<number>(0);
+  const [numPages, setNumPages] = useState<number>(1);
   const [scale, setScale] = useState<number>(0.8);
   const [rotation, setRotation] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
@@ -63,7 +80,6 @@ export function PdfViewer({
   const calculateFitToWidthScale = useCallback((pageObj?: any): number => {
     if (!containerRef.current) return 0.8;
     const containerWidth = containerRef.current.clientWidth;
-    // Horizontal padding in viewport area (e.g. 16px left + 16px right = 32px + 8px leeway)
     const availableWidth = Math.max(containerWidth - 40, 200);
 
     const targetPage = pageObj || currentPageObjRef.current;
@@ -72,14 +88,12 @@ export function PdfViewer({
         const unscaledViewport = targetPage.getViewport({ scale: 1, rotation });
         if (unscaledViewport.width > 0) {
           const fit = availableWidth / unscaledViewport.width;
-          return Math.round(Math.min(Math.max(fit, 0.4), 2.5) * 100) / 100;
+          return clampZoom(fit, 0.4, 2.5);
         }
       } catch {}
     }
 
-    // Default standard A4 page width estimation (~595px)
-    const estimated = availableWidth / 595.28;
-    return Math.round(Math.min(Math.max(estimated, 0.4), 2.5) * 100) / 100;
+    return calculateDefaultZoom('tablet', containerWidth);
   }, [rotation]);
 
   // Determine initial scale based on device breakpoint
@@ -117,7 +131,6 @@ export function PdfViewer({
           setScale(calculateFitToWidthScale(currentPageObjRef.current));
         }
       } else if (currentCategory === 'tablet' && !userHasManuallyZoomedRef.current) {
-        // If resized within tablet breakpoint and user hasn't overridden zoom, keep fit-to-width
         setScale(calculateFitToWidthScale(currentPageObjRef.current));
       }
     };
@@ -126,49 +139,62 @@ export function PdfViewer({
     return () => window.removeEventListener('resize', handleResize);
   }, [calculateFitToWidthScale]);
 
-  // Initialize PDF.js and load document
+  // Initialize PDF document (cache-first, parallel-safe singleton)
   useEffect(() => {
     let isMounted = true;
-    let loadingTask: any = null;
 
-    async function loadPdf() {
+    async function loadDocument() {
       setLoading(true);
       setError(null);
 
       try {
-        const pdfjsLib = await import('pdfjs-dist');
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+        let buffer: ArrayBuffer | null = initialBuffer || null;
 
-        loadingTask = pdfjsLib.getDocument({
-          url,
-          withCredentials: false,
-        });
+        // 1. Check client binary cache if drugId is present
+        if (!buffer && drugId) {
+          buffer = await getCachedPdfBuffer(drugId);
+        }
 
-        const doc = await loadingTask.promise;
+        // 2. Fetch binary if not yet cached
+        if (!buffer) {
+          if (drugId) {
+            buffer = await fetchPdfBuffer(drugId, url);
+          } else if (url) {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`Failed to download PDF (${res.status})`);
+            buffer = await res.arrayBuffer();
+          }
+        }
+
+        if (!isMounted) return;
+        if (!buffer && !url) {
+          throw new Error('No PDF source provided');
+        }
+
+        // 3. Load single-page PDF document
+        const { doc, page, numPages: count } = await loadSinglePagePdf(
+          buffer ? { buffer } : { url }
+        );
+
         if (!isMounted) return;
 
         setPdfDoc(doc);
-        setNumPages(doc.numPages);
+        setNumPages(count);
         setCurrentPage(1);
+        currentPageObjRef.current = page;
 
-        // Fetch first page to compute exact fit-to-width if needed
-        try {
-          const firstPage = await doc.getPage(1);
-          if (isMounted) {
-            currentPageObjRef.current = firstPage;
-            if (typeof window !== 'undefined') {
-              const category = getDeviceCategory(window.innerWidth);
-              if (category === 'tablet' && !userHasManuallyZoomedRef.current) {
-                setScale(calculateFitToWidthScale(firstPage));
-              }
-            }
+        // Recalculate tablet fit-to-width with precise page viewport
+        if (typeof window !== 'undefined') {
+          const category = getDeviceCategory(window.innerWidth);
+          if (category === 'tablet' && !userHasManuallyZoomedRef.current) {
+            setScale(calculateFitToWidthScale(page));
           }
-        } catch {}
+        }
 
         setLoading(false);
 
         if (onDocumentLoaded) {
-          onDocumentLoaded(doc.numPages);
+          onDocumentLoaded(count);
         }
 
         // Track pdf_viewed event once per document load
@@ -182,7 +208,7 @@ export function PdfViewer({
               drugId,
               details: {
                 drugName,
-                pageCount: doc.numPages,
+                pageCount: count,
               },
             }),
           }).catch((err) => console.error('Error logging pdf_viewed:', err));
@@ -190,24 +216,22 @@ export function PdfViewer({
       } catch (err: any) {
         if (!isMounted) return;
         console.error('PDF load error:', err);
-        setError(err.message || 'Unable to load PDF document. Please check your network or download the file directly.');
+        setError(
+          err.message ||
+            'Unable to load publication document. Please check your connection or download directly.'
+        );
         setLoading(false);
       }
     }
 
-    if (url) {
-      loadPdf();
+    if (initialBuffer || url || drugId) {
+      loadDocument();
     }
 
     return () => {
       isMounted = false;
-      if (loadingTask) {
-        try {
-          loadingTask.destroy();
-        } catch {}
-      }
     };
-  }, [url, drugId, drugName, calculateFitToWidthScale, onDocumentLoaded, hasReportedView]);
+  }, [url, initialBuffer, drugId, drugName, calculateFitToWidthScale, onDocumentLoaded, hasReportedView]);
 
   // High-DPI, Device-Pixel-Ratio aware rendering with lazy cleanup and RAF scheduling
   const renderPage = useCallback(async () => {
@@ -231,8 +255,12 @@ export function PdfViewer({
     // Yield to the browser compositor so button taps and scale labels paint in frame 0
     renderRafRef.current = requestAnimationFrame(async () => {
       try {
-        const page = await pdfDoc.getPage(currentPage);
-        currentPageObjRef.current = page;
+        // Reuse cached page object if available (all 19 docs are single-page)
+        let page = currentPageObjRef.current;
+        if (!page || currentPage !== 1) {
+          page = await pdfDoc.getPage(currentPage);
+          currentPageObjRef.current = page;
+        }
 
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -240,32 +268,25 @@ export function PdfViewer({
         const context = canvas.getContext('2d', { alpha: false });
         if (!context) return;
 
-        // 1. Calculate device pixel ratio (clamped between 1 and 3 for memory safety on high-DPI mobile)
+        // 1. Calculate device pixel ratio (clamped between 1 and 3 for memory safety on mobile)
         const rawDpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-        const outputScale = Math.min(Math.max(rawDpr, 1), 3);
 
         // 2. Base viewport at logical CSS zoom level
         const viewport = page.getViewport({ scale, rotation });
 
         // 3. Separate canvas backing resolution (physical pixels) from CSS display dimensions
-        const displayWidth = Math.floor(viewport.width);
-        const displayHeight = Math.floor(viewport.height);
+        const resolution = computeBackingResolution(viewport.width, viewport.height, rawDpr);
 
-        canvas.width = Math.floor(viewport.width * outputScale);
-        canvas.height = Math.floor(viewport.height * outputScale);
-
-        canvas.style.width = `${displayWidth}px`;
-        canvas.style.height = `${displayHeight}px`;
+        canvas.width = resolution.canvasWidth;
+        canvas.height = resolution.canvasHeight;
+        canvas.style.width = resolution.cssWidth;
+        canvas.style.height = resolution.cssHeight;
 
         // 4. Set transform matrix so PDF.js draws into high-resolution buffer with vector crispness
-        const transform = outputScale !== 1
-          ? [outputScale, 0, 0, outputScale, 0, 0]
-          : null;
-
         const renderContext = {
           canvasContext: context,
           viewport,
-          transform,
+          transform: resolution.transform,
         };
 
         const renderTask = page.render(renderContext);
@@ -274,7 +295,6 @@ export function PdfViewer({
         await renderTask.promise;
       } catch (err: any) {
         if (err?.name === 'RenderingCancelledException') {
-          // Expected cancellation when user quickly scrolls or resizes
           return;
         }
         console.error('Page render error:', err);
@@ -303,7 +323,7 @@ export function PdfViewer({
     };
   }, []);
 
-  // Page navigation handlers
+  // Page navigation handlers (for single-page documents, neatly guarded)
   const handlePrevPage = () => {
     if (currentPage > 1) {
       setCurrentPage((prev) => prev - 1);
@@ -319,12 +339,12 @@ export function PdfViewer({
   // Manual Zoom controls - flags that user made an explicit choice
   const handleZoomIn = () => {
     userHasManuallyZoomedRef.current = true;
-    setScale((s) => Math.min(Math.round((s + 0.15) * 100) / 100, 3.0));
+    setScale((s) => clampZoom(s + 0.15));
   };
 
   const handleZoomOut = () => {
     userHasManuallyZoomedRef.current = true;
-    setScale((s) => Math.max(Math.round((s - 0.15) * 100) / 100, 0.4));
+    setScale((s) => clampZoom(s - 0.15));
   };
 
   const handleFitWidth = () => {
@@ -340,6 +360,87 @@ export function PdfViewer({
       containerRef.current.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
     } else {
       document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+    }
+  };
+
+  // Double-tap handler: toggles between zoomed in (1.35x) and default zoom level
+  const handleDoubleTap = useCallback(() => {
+    userHasManuallyZoomedRef.current = true;
+    setScale((prevScale) => {
+      if (prevScale <= 0.85) {
+        return 1.35; // Zoom in to inspect clinical details
+      }
+      // Return to default
+      if (typeof window !== 'undefined') {
+        const cat = getDeviceCategory(window.innerWidth);
+        if (cat === 'mobile') return 0.6;
+        if (cat === 'desktop') return 0.8;
+        return calculateFitToWidthScale(currentPageObjRef.current);
+      }
+      return 0.8;
+    });
+  }, [calculateFitToWidthScale]);
+
+  // Touch handlers for fluid 60fps pinch-to-zoom
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 2) {
+      // 2 fingers: pinch gesture start
+      isPinchingRef.current = true;
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      touchStartDistRef.current = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      touchStartScaleRef.current = scale;
+      currentPinchScaleRef.current = scale;
+    } else if (e.touches.length === 1) {
+      // Single tap: detect double-tap
+      const now = Date.now();
+      const t = e.touches[0];
+      const distFromLastTap = Math.hypot(
+        t.clientX - lastTapRef.current.x,
+        t.clientY - lastTapRef.current.y
+      );
+
+      if (now - lastTapRef.current.time < 320 && distFromLastTap < 30) {
+        // Double tap confirmed!
+        handleDoubleTap();
+        lastTapRef.current = { time: 0, x: 0, y: 0 };
+      } else {
+        lastTapRef.current = { time: now, x: t.clientX, y: t.clientY };
+      }
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (isPinchingRef.current && e.touches.length === 2 && touchStartDistRef.current > 0) {
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      const ratio = currentDist / touchStartDistRef.current;
+      const targetScale = clampZoom(touchStartScaleRef.current * ratio);
+      currentPinchScaleRef.current = targetScale;
+
+      // Hardware-accelerated CSS transform on the wrapper gives 60fps smooth visual pinch
+      if (canvasWrapperRef.current) {
+        const visualRatio = targetScale / touchStartScaleRef.current;
+        canvasWrapperRef.current.style.transform = `scale(${visualRatio})`;
+        canvasWrapperRef.current.style.transformOrigin = 'center top';
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (isPinchingRef.current) {
+      isPinchingRef.current = false;
+      touchStartDistRef.current = 0;
+
+      // Reset visual CSS transform and commit new clamped scale to canvas
+      if (canvasWrapperRef.current) {
+        canvasWrapperRef.current.style.transform = '';
+        canvasWrapperRef.current.style.transformOrigin = '';
+      }
+
+      userHasManuallyZoomedRef.current = true;
+      setScale(currentPinchScaleRef.current);
     }
   };
 
@@ -375,29 +476,38 @@ export function PdfViewer({
           )}
         </div>
 
-        {/* Page Navigation Controls */}
+        {/* Page Indicator (Single-page optimized) */}
         <div className="flex items-center gap-1 bg-slate-900/80 px-2 py-1 rounded-lg border border-slate-700/80">
-          <button
-            type="button"
-            onClick={handlePrevPage}
-            disabled={currentPage <= 1 || loading}
-            aria-label="Previous Page"
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 active:bg-slate-600 active:scale-90 disabled:opacity-30 disabled:hover:bg-transparent text-slate-200 transition-all duration-75 touch-manipulation cursor-pointer"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <span className="px-1 text-slate-300 tabular-nums text-xs font-semibold">
-            {loading ? '-' : `${currentPage} / ${numPages}`}
-          </span>
-          <button
-            type="button"
-            onClick={handleNextPage}
-            disabled={currentPage >= numPages || loading}
-            aria-label="Next Page"
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 active:bg-slate-600 active:scale-90 disabled:opacity-30 disabled:hover:bg-transparent text-slate-200 transition-all duration-75 touch-manipulation cursor-pointer"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
+          {numPages > 1 ? (
+            <>
+              <button
+                type="button"
+                onClick={handlePrevPage}
+                disabled={currentPage <= 1 || loading}
+                aria-label="Previous Page"
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 active:bg-slate-600 active:scale-90 disabled:opacity-30 disabled:hover:bg-transparent text-slate-200 transition-all duration-75 touch-manipulation cursor-pointer"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="px-1 text-slate-300 tabular-nums text-xs font-semibold">
+                {loading ? '-' : `${currentPage} / ${numPages}`}
+              </span>
+              <button
+                type="button"
+                onClick={handleNextPage}
+                disabled={currentPage >= numPages || loading}
+                aria-label="Next Page"
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 active:bg-slate-600 active:scale-90 disabled:opacity-30 disabled:hover:bg-transparent text-slate-200 transition-all duration-75 touch-manipulation cursor-pointer"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </>
+          ) : (
+            <span className="px-2 py-0.5 text-slate-300 tabular-nums text-[11px] font-semibold flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-blue-400" />
+              Single Page
+            </span>
+          )}
         </div>
 
         {/* Zoom & View Controls */}
@@ -407,7 +517,7 @@ export function PdfViewer({
             onClick={handleZoomOut}
             disabled={scale <= 0.4 || loading}
             aria-label="Zoom Out"
-            title="Zoom Out"
+            title="Zoom Out (Min 40%)"
             className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 active:bg-slate-600 active:scale-90 disabled:opacity-30 text-slate-300 transition-all duration-75 touch-manipulation cursor-pointer"
           >
             <ZoomOut className="w-4 h-4" />
@@ -424,7 +534,7 @@ export function PdfViewer({
             Fit
           </button>
 
-          <span className="text-xs text-slate-300 w-10 sm:w-12 text-center tabular-nums font-medium">
+          <span className="text-xs text-slate-300 w-10 sm:w-12 text-center tabular-nums font-medium select-none">
             {Math.round(scale * 100)}%
           </span>
 
@@ -433,7 +543,7 @@ export function PdfViewer({
             onClick={handleZoomIn}
             disabled={scale >= 3.0 || loading}
             aria-label="Zoom In"
-            title="Zoom In"
+            title="Zoom In (Max 300%)"
             className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 active:bg-slate-600 active:scale-90 disabled:opacity-30 text-slate-300 transition-all duration-75 touch-manipulation cursor-pointer"
           >
             <ZoomIn className="w-4 h-4" />
@@ -474,9 +584,14 @@ export function PdfViewer({
         </div>
       </div>
 
-      {/* Main Canvas Scroll Area (Device-pixel-ratio aware) */}
+      {/* Main Canvas Scroll Area (Device-pixel-ratio aware + Touch Pinch-to-Zoom) */}
       <div
-        className="flex-1 overflow-auto bg-slate-950 p-2 sm:p-4 flex relative min-h-0"
+        ref={scrollAreaRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+        className="flex-1 overflow-auto bg-slate-950 p-2 sm:p-4 flex relative min-h-0 select-none touch-manipulation"
         style={{
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain',
@@ -485,14 +600,14 @@ export function PdfViewer({
         {loading && (
           <div className="m-auto flex flex-col items-center justify-center gap-3 text-slate-300 p-8">
             <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-            <p className="text-sm font-medium">Loading high-resolution research document...</p>
+            <p className="text-sm font-medium">Loading high-resolution research publication...</p>
           </div>
         )}
 
         {error && (
           <div className="m-auto flex flex-col items-center justify-center p-6 text-center max-w-md bg-slate-900 border border-red-900/50 rounded-xl">
             <AlertCircle className="w-10 h-10 text-red-400 mb-3" />
-            <h4 className="text-base font-semibold text-slate-200 mb-1">Document Display Notice</h4>
+            <h4 className="text-base font-semibold text-slate-200 mb-1">Publication Display Notice</h4>
             <p className="text-xs text-slate-400 mb-4 leading-relaxed">{error}</p>
             {drugId && (
               <a
@@ -506,12 +621,17 @@ export function PdfViewer({
           </div>
         )}
 
-        <canvas
-          ref={canvasRef}
-          className={`m-auto shadow-2xl bg-white max-w-none block shrink-0 ${
+        <div
+          ref={canvasWrapperRef}
+          className={`m-auto transition-transform duration-75 will-change-transform ${
             loading || error ? 'hidden' : 'block'
           }`}
-        />
+        >
+          <canvas
+            ref={canvasRef}
+            className="shadow-2xl bg-white max-w-none block shrink-0 cursor-default"
+          />
+        </div>
       </div>
     </div>
   );

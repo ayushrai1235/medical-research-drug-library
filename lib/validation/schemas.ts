@@ -35,9 +35,17 @@ export const activityEventSchema = z.object({
   details: z.record(z.any()).optional().default({}),
 });
 
-export const signedUrlRequestSchema = z.object({
-  drugId: z.string().uuid(),
-});
+export const signedUrlRequestSchema = z.union([
+  z.object({
+    drugId: z.string().uuid({ message: 'Valid drug UUID is required' }),
+  }),
+  z.object({
+    drugIds: z
+      .array(z.string().uuid({ message: 'Valid drug UUID is required' }))
+      .min(1, { message: 'At least one drug ID is required' })
+      .max(19, { message: 'Cannot exceed 19 drugs' }),
+  }),
+]);
 
 export const zipDownloadRequestSchema = z.object({
   drugIds: z
