@@ -35,8 +35,13 @@ export function SelectionBar({
       return;
     }
     const query = selectedDrugIds.join(',');
+    const currentSearch = typeof window !== 'undefined' ? window.location.search.replace(/^\?/, '') : '';
+    const targetUrl = currentSearch
+      ? `/compare?ids=${encodeURIComponent(query)}&from=${encodeURIComponent(currentSearch)}`
+      : `/compare?ids=${encodeURIComponent(query)}`;
+
     startTransition(() => {
-      router.push(`/compare?ids=${encodeURIComponent(query)}`);
+      router.push(targetUrl);
     });
   };
 

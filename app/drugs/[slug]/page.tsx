@@ -1,13 +1,14 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { after } from 'next/server';
 import { getResearchSession } from '@/lib/auth/session';
 import { getAdminUser } from '@/lib/auth/admin';
 import { getServiceRoleSupabaseClient } from '@/lib/supabase/service-role';
 import { Header } from '@/components/library/Header';
+import { BackButton } from '@/components/library/BackButton';
 import { PdfViewer } from '@/components/pdf/PdfViewer';
 import { logActivityEvent } from '@/lib/activity/tracker';
 import {
-  ArrowLeft,
   Download,
   ArrowLeftRight,
   ShieldCheck,
@@ -20,10 +21,13 @@ const BUCKET_NAME = 'research-pdfs';
 
 export default async function DrugDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { slug } = await params;
+  const { from } = await searchParams;
   const [researchSession, adminAuth] = await Promise.all([
     getResearchSession(),
     getAdminUser(),
@@ -46,15 +50,21 @@ export default async function DrugDetailPage({
     redirect('/library');
   }
 
-  // Record drug_opened event
-  await logActivityEvent({
-    action: 'drug_opened',
-    drugId: drug.id,
-    details: {
-      drugName: drug.name,
-      slug: drug.slug,
-      category: (drug.categories as any)?.name,
-    },
+  // Schedule activity telemetry after response completes (non-blocking for SSR TTFB)
+  after(async () => {
+    try {
+      await logActivityEvent({
+        action: 'drug_opened',
+        drugId: drug.id,
+        details: {
+          drugName: drug.name,
+          slug: drug.slug,
+          category: (drug.categories as any)?.name,
+        },
+      });
+    } catch (err) {
+      console.error('Error logging drug_opened activity in after():', err);
+    }
   });
 
   // Generate signed URL
@@ -74,6 +84,7 @@ export default async function DrugDetailPage({
   }
 
   const categoryName = (drug.categories as any)?.name || 'General';
+  const backHref = from ? `/library?${decodeURIComponent(from)}` : '/library';
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -88,10 +99,7 @@ export default async function DrugDetailPage({
           <div>
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-1">
-              <Link href="/library" className="hover:text-blue-700 flex items-center gap-1 transition">
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Library
-              </Link>
+              <BackButton fallbackHref={backHref} label="Library" />
               <span>/</span>
               <span className="text-slate-700">{categoryName}</span>
               <span>/</span>
@@ -111,7 +119,7 @@ export default async function DrugDetailPage({
           {/* Action Buttons */}
           <div className="flex items-center gap-2.5">
             <Link
-              href={`/compare?ids=${drug.id}`}
+              href={`/compare?ids=${drug.id}${from ? `&from=${encodeURIComponent(from)}` : ''}`}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 active:scale-[0.97] border border-slate-300 rounded-lg transition-all duration-75 touch-manipulation cursor-pointer"
             >
               <ArrowLeftRight className="w-4 h-4 text-slate-600" />

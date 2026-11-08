@@ -1,16 +1,16 @@
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
 import { getResearchSession } from '@/lib/auth/session';
 import { getAdminUser } from '@/lib/auth/admin';
 import { getServiceRoleSupabaseClient } from '@/lib/supabase/service-role';
 import { Header } from '@/components/library/Header';
+import { BackButton } from '@/components/library/BackButton';
 import { ComparisonView, ComparisonDrug } from '@/components/comparison/ComparisonView';
-import { ArrowLeft, ArrowLeftRight } from 'lucide-react';
+import { ArrowLeftRight } from 'lucide-react';
 
 export default async function ComparePage({
   searchParams,
 }: {
-  searchParams: Promise<{ ids?: string }>;
+  searchParams: Promise<{ ids?: string; from?: string }>;
 }) {
   const [researchSession, adminAuth] = await Promise.all([
     getResearchSession(),
@@ -21,7 +21,7 @@ export default async function ComparePage({
     redirect('/research-entry');
   }
 
-  const { ids } = await searchParams;
+  const { ids, from } = await searchParams;
   const initialIds = (ids || '').split(',').map((s) => s.trim()).filter(Boolean);
 
   const supabase = getServiceRoleSupabaseClient();
@@ -46,6 +46,7 @@ export default async function ComparePage({
 
   const initialDrug1Id = initialIds[0] || mappedDrugs[0]?.id;
   const initialDrug2Id = initialIds[1] || (mappedDrugs.length > 1 ? mappedDrugs[1]?.id : mappedDrugs[0]?.id);
+  const backHref = from ? `/library?${decodeURIComponent(from)}` : '/library';
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -57,10 +58,7 @@ export default async function ComparePage({
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col space-y-4">
         {/* Breadcrumb Navigation */}
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-          <Link href="/library" className="hover:text-blue-700 flex items-center gap-1 transition">
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Library
-          </Link>
+          <BackButton fallbackHref={backHref} label="Library" />
           <span>/</span>
           <span className="text-blue-900 font-bold flex items-center gap-1">
             <ArrowLeftRight className="w-3.5 h-3.5" />
@@ -73,6 +71,7 @@ export default async function ComparePage({
           drugs={mappedDrugs}
           initialDrug1Id={initialDrug1Id}
           initialDrug2Id={initialDrug2Id}
+          fromQuery={from}
         />
       </main>
     </div>

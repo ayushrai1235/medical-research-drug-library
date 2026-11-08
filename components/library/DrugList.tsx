@@ -1,7 +1,16 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useTransition, useDeferredValue } from 'react';
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  useTransition,
+  useDeferredValue,
+  useRef,
+} from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   Search,
   FileText,
@@ -43,14 +52,25 @@ const DrugRow = React.memo(function DrugRow({
   drug,
   categoryName,
   isSelected,
+  currentSearchString,
   onToggle,
 }: {
   drug: DrugData;
   categoryName: string;
   isSelected: boolean;
+  currentSearchString: string;
   onToggle: (id: string) => void;
 }) {
   const isAvailable = drug.pdf_status === 'uploaded';
+  const detailHref = currentSearchString
+    ? `/drugs/${drug.slug}?from=${encodeURIComponent(currentSearchString)}`
+    : `/drugs/${drug.slug}`;
+
+  const handleSaveScroll = () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('library_scroll_pos', String(window.scrollY));
+    }
+  };
 
   return (
     <div
@@ -75,7 +95,8 @@ const DrugRow = React.memo(function DrugRow({
 
         <div className="flex flex-col min-w-0">
           <Link
-            href={`/drugs/${drug.slug}`}
+            href={detailHref}
+            onClick={handleSaveScroll}
             className="text-sm font-semibold text-slate-900 hover:text-blue-700 active:text-blue-900 transition flex items-center gap-2 truncate touch-manipulation"
           >
             {drug.name}
@@ -111,7 +132,8 @@ const DrugRow = React.memo(function DrugRow({
 
         {/* View Action */}
         <Link
-          href={`/drugs/${drug.slug}`}
+          href={detailHref}
+          onClick={handleSaveScroll}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 active:scale-[0.97] rounded-lg transition-all duration-75 touch-manipulation shrink-0"
         >
           <FileText className="w-3.5 h-3.5" />
@@ -136,13 +158,117 @@ const DrugRow = React.memo(function DrugRow({
 });
 
 export function DrugList({ categories }: DrugListProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedDrugIds, setSelectedDrugIds] = useState<string[]>([]);
+  const searchParams = useSearchParams();
+
+  // Validate initial category safely against approved categories
+  const initialCategory = useMemo(() => {
+    const cat = searchParams.get('category');
+    if (cat && (cat === 'all' || categories.some((c) => c.slug === cat))) {
+      return cat;
+    }
+    return 'all';
+  }, [searchParams, categories]);
+
+  // Read initial query from URL
+  const initialQuery = useMemo(() => {
+    return searchParams.get('q') || '';
+  }, [searchParams]);
+
+  // Read initial selected drugs from URL
+  const initialSelected = useMemo(() => {
+    const sel = searchParams.get('selected');
+    if (!sel) return [];
+    const validIds = new Set(categories.flatMap((c) => c.drugs.map((d) => d.id)));
+    return sel.split(',').filter((id) => validIds.has(id));
+  }, [searchParams, categories]);
+
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
+  const [searchQuery, setSearchQuery] = useState<string>(initialQuery);
+  const [selectedDrugIds, setSelectedDrugIds] = useState<string[]>(initialSelected);
   const [, startTransition] = useTransition();
 
   // Defer search filter computation so keystrokes remain instantaneous on mobile CPUs
   const deferredSearchQuery = useDeferredValue(searchQuery);
+
+  // Helper to build canonical URL search parameter string
+  const buildSearchString = useCallback((cat: string, q: string, sel: string[]) => {
+    const params = new URLSearchParams();
+    if (cat && cat !== 'all') {
+      params.set('category', cat);
+    }
+    const trimmed = q.trim();
+    if (trimmed) {
+      params.set('q', trimmed);
+    }
+    if (sel.length > 0) {
+      params.set('selected', sel.join(','));
+    }
+    return params.toString();
+  }, []);
+
+  const currentSearchString = useMemo(() => {
+    return buildSearchString(selectedCategory, searchQuery, selectedDrugIds);
+  }, [buildSearchString, selectedCategory, searchQuery, selectedDrugIds]);
+
+  // Sync state to URL via lightweight history.replaceState (avoids router rerenders)
+  const syncUrlState = useCallback(
+    (cat: string, q: string, sel: string[]) => {
+      if (typeof window === 'undefined') return;
+      const searchStr = buildSearchString(cat, q, sel);
+      const newPath = searchStr ? `${window.location.pathname}?${searchStr}` : window.location.pathname;
+      if (window.location.search !== (searchStr ? `?${searchStr}` : '')) {
+        window.history.replaceState(null, '', newPath);
+      }
+    },
+    [buildSearchString]
+  );
+
+  // Debounced URL update for search keystrokes (250ms)
+  const isInitialMountRef = useRef(true);
+  useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      syncUrlState(selectedCategory, searchQuery, selectedDrugIds);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, selectedCategory, selectedDrugIds, syncUrlState]);
+
+  // Restore scroll position after returning from detail or compare page
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = sessionStorage.getItem('library_scroll_pos');
+    if (saved) {
+      const y = parseInt(saved, 10);
+      if (!isNaN(y) && y > 0) {
+        requestAnimationFrame(() => {
+          window.scrollTo({ top: y, behavior: 'instant' });
+          sessionStorage.removeItem('library_scroll_pos');
+        });
+      }
+    }
+  }, []);
+
+  // Listen for browser popstate (Back/Forward navigation) to restore state from URL
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const cat = params.get('category') || 'all';
+      const q = params.get('q') || '';
+      const sel = params.get('selected');
+      const validIds = new Set(categories.flatMap((c) => c.drugs.map((d) => d.id)));
+
+      setSelectedCategory(cat === 'all' || categories.some((c) => c.slug === cat) ? cat : 'all');
+      setSearchQuery(q);
+      setSelectedDrugIds(sel ? sel.split(',').filter((id) => validIds.has(id)) : []);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [categories]);
 
   // Filtered categories and drugs
   const filteredCategories = useMemo(() => {
@@ -177,28 +303,48 @@ export function DrugList({ categories }: DrugListProps) {
     return filteredCategories.reduce((acc, cat) => acc + cat.drugs.length, 0);
   }, [filteredCategories]);
 
-  // Stable toggle handler for memoized rows
-  const toggleSelectDrug = useCallback((id: string) => {
-    setSelectedDrugIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  }, []);
+  // Toggle drug selection and immediately sync URL
+  const toggleSelectDrug = useCallback(
+    (id: string) => {
+      setSelectedDrugIds((prev) => {
+        const next = prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id];
+        syncUrlState(selectedCategory, searchQuery, next);
+        return next;
+      });
+    },
+    [selectedCategory, searchQuery, syncUrlState]
+  );
 
-  const handleCategoryChange = useCallback((slug: string) => {
-    startTransition(() => {
-      setSelectedCategory(slug);
-    });
-  }, []);
+  // Category filter change with instant URL sync
+  const handleCategoryChange = useCallback(
+    (slug: string) => {
+      startTransition(() => {
+        setSelectedCategory(slug);
+      });
+      syncUrlState(slug, searchQuery, selectedDrugIds);
+    },
+    [searchQuery, selectedDrugIds, syncUrlState]
+  );
 
+  // Select or deselect all visible drugs
   const handleSelectAllVisible = useCallback(() => {
     const visibleIds = filteredCategories.flatMap((c) => c.drugs.map((d) => d.id));
     const allSelected = visibleIds.every((id) => selectedDrugIds.includes(id));
+    let next: string[];
     if (allSelected) {
-      setSelectedDrugIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
+      next = selectedDrugIds.filter((id) => !visibleIds.includes(id));
     } else {
-      setSelectedDrugIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
+      next = Array.from(new Set([...selectedDrugIds, ...visibleIds]));
     }
-  }, [filteredCategories, selectedDrugIds]);
+    setSelectedDrugIds(next);
+    syncUrlState(selectedCategory, searchQuery, next);
+  }, [filteredCategories, selectedDrugIds, selectedCategory, searchQuery, syncUrlState]);
+
+  // Clear all selections
+  const handleClearSelection = useCallback(() => {
+    setSelectedDrugIds([]);
+    syncUrlState(selectedCategory, searchQuery, []);
+  }, [selectedCategory, searchQuery, syncUrlState]);
 
   return (
     <div className="space-y-6">
@@ -218,8 +364,11 @@ export function DrugList({ categories }: DrugListProps) {
             {searchQuery && (
               <button
                 type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 active:scale-90 text-xs font-semibold p-1 touch-manipulation"
+                onClick={() => {
+                  setSearchQuery('');
+                  syncUrlState(selectedCategory, '', selectedDrugIds);
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 active:scale-90 text-xs font-semibold p-1 touch-manipulation cursor-pointer"
               >
                 Clear
               </button>
@@ -234,7 +383,7 @@ export function DrugList({ categories }: DrugListProps) {
             <button
               type="button"
               onClick={handleSelectAllVisible}
-              className="text-blue-700 hover:text-blue-800 active:scale-95 font-semibold text-xs transition-transform touch-manipulation"
+              className="text-blue-700 hover:text-blue-800 active:scale-95 font-semibold text-xs transition-transform touch-manipulation cursor-pointer"
             >
               Select / Deselect Visible
             </button>
@@ -250,7 +399,7 @@ export function DrugList({ categories }: DrugListProps) {
           <button
             type="button"
             onClick={() => handleCategoryChange('all')}
-            className={`px-3 py-1.5 rounded-full font-medium shrink-0 active:scale-95 transition-all duration-75 touch-manipulation ${
+            className={`px-3 py-1.5 rounded-full font-medium shrink-0 active:scale-95 transition-all duration-75 touch-manipulation cursor-pointer ${
               selectedCategory === 'all'
                 ? 'bg-blue-900 text-white shadow-xs'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -263,7 +412,7 @@ export function DrugList({ categories }: DrugListProps) {
               key={cat.id}
               type="button"
               onClick={() => handleCategoryChange(cat.slug)}
-              className={`px-3 py-1.5 rounded-full font-medium shrink-0 active:scale-95 transition-all duration-75 touch-manipulation ${
+              className={`px-3 py-1.5 rounded-full font-medium shrink-0 active:scale-95 transition-all duration-75 touch-manipulation cursor-pointer ${
                 selectedCategory === cat.slug
                   ? 'bg-blue-900 text-white shadow-xs'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -309,6 +458,7 @@ export function DrugList({ categories }: DrugListProps) {
                     drug={drug}
                     categoryName={cat.name}
                     isSelected={selectedDrugIds.includes(drug.id)}
+                    currentSearchString={currentSearchString}
                     onToggle={toggleSelectDrug}
                   />
                 ))}
@@ -321,7 +471,7 @@ export function DrugList({ categories }: DrugListProps) {
       {/* Floating Bottom Selection Toolbar */}
       <SelectionBar
         selectedDrugIds={selectedDrugIds}
-        onClearSelection={() => setSelectedDrugIds([])}
+        onClearSelection={handleClearSelection}
       />
     </div>
   );

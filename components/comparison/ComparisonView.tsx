@@ -25,12 +25,14 @@ interface ComparisonViewProps {
   drugs: ComparisonDrug[];
   initialDrug1Id?: string;
   initialDrug2Id?: string;
+  fromQuery?: string;
 }
 
 export function ComparisonView({
   drugs,
   initialDrug1Id,
   initialDrug2Id,
+  fromQuery,
 }: ComparisonViewProps) {
   const [drug1Id, setDrug1Id] = useState<string>(
     initialDrug1Id || drugs[0]?.id || ''
@@ -38,6 +40,26 @@ export function ComparisonView({
   const [drug2Id, setDrug2Id] = useState<string>(
     initialDrug2Id || (drugs.length > 1 ? drugs[1]?.id : drugs[0]?.id || '')
   );
+
+  const syncComparisonUrl = (newDrug1: string, newDrug2: string) => {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('ids', `${newDrug1},${newDrug2}`);
+    if (fromQuery) {
+      url.searchParams.set('from', fromQuery);
+    }
+    window.history.replaceState(null, '', url.toString());
+  };
+
+  const handleSelectDrug1 = (id: string) => {
+    setDrug1Id(id);
+    syncComparisonUrl(id, drug2Id);
+  };
+
+  const handleSelectDrug2 = (id: string) => {
+    setDrug2Id(id);
+    syncComparisonUrl(drug1Id, id);
+  };
 
   const [buffer1, setBuffer1] = useState<ArrayBuffer | null>(null);
   const [buffer2, setBuffer2] = useState<ArrayBuffer | null>(null);
@@ -247,7 +269,7 @@ export function ComparisonView({
             </label>
             <select
               value={drug1Id}
-              onChange={(e) => setDrug1Id(e.target.value)}
+              onChange={(e) => handleSelectDrug1(e.target.value)}
               className="w-full text-xs sm:text-sm border border-slate-300 rounded px-2.5 py-1.5 bg-slate-50 text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
             >
               {drugs.map((d) => (
@@ -265,7 +287,7 @@ export function ComparisonView({
             </label>
             <select
               value={drug2Id}
-              onChange={(e) => setDrug2Id(e.target.value)}
+              onChange={(e) => handleSelectDrug2(e.target.value)}
               className="w-full text-xs sm:text-sm border border-slate-300 rounded px-2.5 py-1.5 bg-slate-50 text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
             >
               {drugs.map((d) => (

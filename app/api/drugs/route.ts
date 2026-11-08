@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getServiceRoleSupabaseClient } from '@/lib/supabase/service-role';
 
+/**
+ * Conservative shared cache policy for public, non-personal catalog metadata:
+ * - Browser cache: 60 seconds (max-age=60)
+ * - Vercel / Shared Edge CDN cache: 300 seconds (s-maxage=300)
+ * - Stale-while-revalidate: 600 seconds (background revalidation)
+ */
+const CATALOG_CACHE_CONTROL = 'public, max-age=60, s-maxage=300, stale-while-revalidate=600';
+const NO_STORE_CACHE_CONTROL = 'no-store, no-cache, must-revalidate';
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -9,7 +18,7 @@ export async function GET(request: Request) {
 
     const supabase = getServiceRoleSupabaseClient();
 
-    // Fetch categories
+    // Prepare category query
     let catQuery = supabase
       .from('categories')
       .select('id, name, slug, sort_order')
@@ -19,21 +28,31 @@ export async function GET(request: Request) {
       catQuery = catQuery.eq('slug', categorySlug);
     }
 
-    const { data: categories, error: catError } = await catQuery;
-    if (catError) {
-      return NextResponse.json({ error: catError.message }, { status: 500 });
-    }
-
-    // Fetch drugs
-    let drugQuery = supabase
+    // Prepare drugs query
+    const drugQuery = supabase
       .from('drugs')
       .select('id, category_id, name, slug, description, pdf_storage_path, pdf_status, is_active, sort_order')
       .eq('is_active', true)
       .order('sort_order', { ascending: true });
 
-    const { data: drugs, error: drugError } = await drugQuery;
+    // Fetch categories and drugs concurrently
+    const [
+      { data: categories, error: catError },
+      { data: drugs, error: drugError },
+    ] = await Promise.all([catQuery, drugQuery]);
+
+    if (catError) {
+      return NextResponse.json(
+        { error: catError.message },
+        { status: 500, headers: { 'Cache-Control': NO_STORE_CACHE_CONTROL } }
+      );
+    }
+
     if (drugError) {
-      return NextResponse.json({ error: drugError.message }, { status: 500 });
+      return NextResponse.json(
+        { error: drugError.message },
+        { status: 500, headers: { 'Cache-Control': NO_STORE_CACHE_CONTROL } }
+      );
     }
 
     // Filter by search query if present
@@ -53,12 +72,22 @@ export async function GET(request: Request) {
       drugs: filteredDrugs.filter((d) => d.category_id === cat.id),
     }));
 
-    return NextResponse.json({
-      categories: categoriesWithDrugs,
-      totalDrugs: filteredDrugs.length,
-    });
+    return NextResponse.json(
+      {
+        categories: categoriesWithDrugs,
+        totalDrugs: filteredDrugs.length,
+      },
+      {
+        headers: {
+          'Cache-Control': CATALOG_CACHE_CONTROL,
+        },
+      }
+    );
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Failed to fetch drugs' }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || 'Failed to fetch drugs' },
+      { status: 500, headers: { 'Cache-Control': NO_STORE_CACHE_CONTROL } }
+    );
   }
 }
 

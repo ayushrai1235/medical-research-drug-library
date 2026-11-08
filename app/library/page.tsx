@@ -1,10 +1,11 @@
+import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { getResearchSession } from '@/lib/auth/session';
 import { getAdminUser } from '@/lib/auth/admin';
 import { getServiceRoleSupabaseClient } from '@/lib/supabase/service-role';
 import { Header } from '@/components/library/Header';
 import { DrugList, CategoryData } from '@/components/library/DrugList';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Loader2 } from 'lucide-react';
 
 export default async function LibraryPage() {
   const [researchSession, adminAuth] = await Promise.all([
@@ -18,18 +19,21 @@ export default async function LibraryPage() {
 
   const supabase = getServiceRoleSupabaseClient();
 
-  // Fetch approved 7 categories in order
-  const { data: categories, error: catError } = await supabase
-    .from('categories')
-    .select('id, name, slug, sort_order')
-    .order('sort_order', { ascending: true });
-
-  // Fetch approved drugs
-  const { data: drugs, error: drugError } = await supabase
-    .from('drugs')
-    .select('id, category_id, name, slug, description, pdf_storage_path, pdf_status, is_active, sort_order')
-    .eq('is_active', true)
-    .order('sort_order', { ascending: true });
+  // Fetch approved 7 categories and approved drugs concurrently
+  const [
+    { data: categories, error: catError },
+    { data: drugs, error: drugError },
+  ] = await Promise.all([
+    supabase
+      .from('categories')
+      .select('id, name, slug, sort_order')
+      .order('sort_order', { ascending: true }),
+    supabase
+      .from('drugs')
+      .select('id, category_id, name, slug, description, pdf_storage_path, pdf_status, is_active, sort_order')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true }),
+  ]);
 
   if (catError || drugError) {
     throw new Error('Failed to load document catalog.');
@@ -80,7 +84,14 @@ export default async function LibraryPage() {
         </div>
 
         {/* Drug List with Search & Filtering */}
-        <DrugList categories={categoriesWithDrugs} />
+        <Suspense fallback={
+          <div className="flex items-center justify-center p-12 text-slate-400 gap-2">
+            <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+            <span className="text-xs">Loading document catalog...</span>
+          </div>
+        }>
+          <DrugList categories={categoriesWithDrugs} />
+        </Suspense>
       </main>
     </div>
   );
